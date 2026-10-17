@@ -1,0 +1,566 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/bootstrap-region.schema.json",
+  "title": "BootstrapRegion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "regionId",
+    "centerSystem",
+    "radiusLy",
+    "systems",
+    "stations",
+    "chunkCount",
+    "possiblyTruncated"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "regionId": {
+      "$ref": "#/$defs/regionId"
+    },
+    "centerSystem": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "radiusLy": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 50000
+    },
+    "systems": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stations": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "chunkCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "possiblyTruncated": {
+      "type": "boolean"
+    },
+    "nameBucketCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "indexCellLy": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1000
+    },
+    "clusterRadiusLy": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 100
+    },
+    "clusterNearStarLs": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "$defs": {
+    "regionId": {
+      "enum": [
+        "imperial-ngalinn",
+        "federal-canopus",
+        "galaxy"
+      ]
+    },
+    "id64String": {
+      "type": "string",
+      "pattern": "^[0-9]{1,20}$"
+    },
+    "galacticCoordinate": {
+      "type": "number",
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    "allegiance": {
+      "enum": [
+        "Empire",
+        "Federation",
+        "Alliance",
+        "Independent",
+        "Other"
+      ]
+    },
+    "padSize": {
+      "enum": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    "faction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "allegiance"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "allegiance": {
+          "$ref": "#/$defs/allegiance"
+        }
+      }
+    },
+    "factionSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "imperial",
+        "federal",
+        "alliance",
+        "independent",
+        "other"
+      ],
+      "properties": {
+        "imperial": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "federal": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "alliance": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "independent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "other": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "missionProviderFactions": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "const": "unknown"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "factionIds",
+            "source",
+            "observedAt"
+          ],
+          "properties": {
+            "status": {
+              "const": "known"
+            },
+            "factionIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "source": {
+              "enum": [
+                "journal",
+                "external"
+              ]
+            },
+            "observedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      ]
+    },
+    "station": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "systemId",
+        "name",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "systemId": {
+          "$ref": "#/$defs/id64String"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "bodyName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "star": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "isMain",
+            "source"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "isMain": {
+              "type": "boolean"
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "dump",
+                "manual"
+              ]
+            }
+          }
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "distanceToArrivalLs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxPadSize": {
+          "$ref": "#/$defs/padSize"
+        },
+        "hasMissionBoard": {
+          "type": "boolean"
+        },
+        "missionBoardSource": {
+          "enum": [
+            "journal",
+            "external",
+            "builder"
+          ]
+        },
+        "controllingFaction": {
+          "$ref": "#/$defs/faction"
+        },
+        "missionProviderFactions": {
+          "$ref": "#/$defs/missionProviderFactions"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedBy": {
+          "enum": [
+            "journal",
+            "external",
+            "builder"
+          ]
+        }
+      }
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "x",
+        "y",
+        "z",
+        "regionIds",
+        "updatedAt",
+        "systemFactions",
+        "systemFactionSummary",
+        "stations"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id64String"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "x": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "z": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "regionIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/regionId"
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "systemFactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/faction"
+          }
+        },
+        "systemFactionSummary": {
+          "$ref": "#/$defs/factionSummary"
+        },
+        "stations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/station"
+          }
+        },
+        "updatedBy": {
+          "enum": [
+            "journal",
+            "external",
+            "builder"
+          ]
+        }
+      }
+    },
+    "systemIndexEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "x",
+        "y",
+        "z",
+        "chunk"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id64String"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "x": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "z": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "chunk": {
+          "type": "string",
+          "pattern": "^chunks/(chunk-[0-9]{3}|chunk(_-?[0-9]{1,5}){3})\\.json$"
+        },
+        "stations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missionBoards": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "largePad": {
+          "type": "boolean"
+        }
+      }
+    },
+    "systemsIndex": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/systemIndexEntry"
+      }
+    },
+    "chunk": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/system"
+      }
+    },
+    "clusterMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "systems",
+        "stations",
+        "stationsNearStar",
+        "medianArrivalLs"
+      ],
+      "properties": {
+        "systems": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stationsNearStar": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "medianArrivalLs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "clusterCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "systemName",
+        "x",
+        "y",
+        "z",
+        "byFilter"
+      ],
+      "properties": {
+        "systemName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "x": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "z": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "byFilter": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^(any|M|L):(all|orbital)$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/clusterMetrics"
+          }
+        }
+      }
+    },
+    "clusters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "generatedAt",
+        "regionId",
+        "radiusLy",
+        "nearStarLs",
+        "candidates"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "regionId": {
+          "$ref": "#/$defs/regionId"
+        },
+        "radiusLy": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100
+        },
+        "nearStarLs": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/clusterCandidate"
+          }
+        }
+      }
+    },
+    "cellPath": {
+      "type": "string",
+      "pattern": "^(index|clusters)/(index|clusters)(_-?[0-9]{1,5}){3}\\.json$"
+    },
+    "indexCell": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/systemIndexEntry"
+      }
+    },
+    "clusterCell": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/clusterCandidate"
+      }
+    },
+    "systemCells": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 3,
+        "items": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

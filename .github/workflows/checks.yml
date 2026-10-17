@@ -1,0 +1,44 @@
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  agent:
+    name: cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            agent/target
+          key: cargo-${{ hashFiles('agent/Cargo.lock') }}
+
+      - name: Format
+        working-directory: agent
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        working-directory: agent
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests
+        working-directory: agent
+        run: cargo test --workspace
+
+      - name: Windows target
+        working-directory: agent
+        run: rustup target add x86_64-pc-windows-msvc
+
+      - name: Agent window compiles
+        working-directory: agent
+        run: cargo clippy -p agent-ui --all-targets --target x86_64-pc-windows-msvc -- -D warnings

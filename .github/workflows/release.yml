@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: elite-agent.exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Version and changelog
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! grep -q "^version = \"$version\"" agent/Cargo.toml; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the version in agent/Cargo.toml"
+            exit 1
+          fi
+          awk -v heading="## $version " '
+            index($0, heading) == 1 { inside = 1; next }
+            /^## / { inside = 0 }
+            inside
+          ' agent/CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::agent/CHANGELOG.md has no section «## $version — <date>»"
+            exit 1
+          fi
+
+      - name: Build
+        working-directory: agent
+        run: cargo build --release
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          title="Elite Rank Farm Agent $version"
+          if [ "${version%%.*}" = "0" ]; then
+            title="$title [beta]"
+          fi
+          gh release create "$GITHUB_REF_NAME" agent/target/release/elite-agent.exe \
+            --title "$title" --notes-file notes.md

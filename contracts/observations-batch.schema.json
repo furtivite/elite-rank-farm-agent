@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/observations-batch.schema.json",
+  "title": "ObservationsBatch",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "observations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "system"
+            ],
+            "properties": {
+              "type": {
+                "const": "system"
+              },
+              "system": {
+                "$ref": "https://elite.internal/contracts/system-observation.schema.json"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "station"
+            ],
+            "properties": {
+              "type": {
+                "const": "station"
+              },
+              "station": {
+                "$ref": "https://elite.internal/contracts/station-observation.schema.json"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

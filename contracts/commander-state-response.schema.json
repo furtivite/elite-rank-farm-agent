@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/commander-state-response.schema.json",
+  "title": "CommanderStateResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "state",
+    "updatedAt"
+  ],
+  "properties": {
+    "status": {
+      "const": "ok"
+    },
+    "state": {
+      "$ref": "https://elite.internal/contracts/commander-state.schema.json"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agentVersion": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 32
+    },
+    "agentUpdateRequired": {
+      "type": "boolean"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 64
+      },
+      "maxItems": 32
+    },
+    "finedFactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "observedAt"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "maxItems": 64
+    }
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/commander-state.schema.json",
+  "title": "CommanderState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "commanderName",
+    "currentSystem",
+    "ship",
+    "jumpRangeLy",
+    "imperialRank",
+    "imperialProgress",
+    "imperialProgressAt",
+    "federalRank",
+    "federalProgress",
+    "federalProgressAt",
+    "observedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 4
+    },
+    "agentVersion": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "finedFactions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "maxItems": 64
+    },
+    "commanderName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "currentSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "x": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "z": {
+          "$ref": "#/$defs/galacticCoordinate"
+        }
+      }
+    },
+    "currentStation": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "currentBody": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "ship": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "requiredPadSize": {
+      "enum": [
+        "S",
+        "M",
+        "L",
+        null
+      ]
+    },
+    "jumpRangeLy": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 500
+    },
+    "imperialRank": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 14
+    },
+    "imperialProgress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "imperialProgressAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "federalRank": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 14
+    },
+    "federalProgress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "federalProgressAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "presence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "at"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "playing",
+            "gameExited",
+            "agentStopped"
+          ]
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "recentSystems": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "at"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "recentSupercruise": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "at",
+          "distanceLs",
+          "seconds"
+        ],
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "distanceLs": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 1000000
+          },
+          "seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600
+          },
+          "dockingSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600
+          }
+        }
+      }
+    },
+    "loadout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unladenMassT",
+        "fuelCapacityT"
+      ],
+      "properties": {
+        "unladenMassT": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5000
+        },
+        "fuelCapacityT": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 256
+        },
+        "cargoCapacityT": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2048
+        },
+        "fuelLevelT": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "cargoT": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2048
+        },
+        "fsdSymbol": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "fsdOptimalMassT": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10000
+        },
+        "fsdBoosterSymbol": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    }
+  },
+  "$defs": {
+    "galacticCoordinate": {
+      "type": "number",
+      "minimum": -100000,
+      "maximum": 100000
+    }
+  }
+}

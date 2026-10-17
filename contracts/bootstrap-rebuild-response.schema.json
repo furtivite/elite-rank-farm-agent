@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/bootstrap-rebuild-response.schema.json",
+  "title": "BootstrapRebuildResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "rebuilt",
+    "warnings"
+  ],
+  "properties": {
+    "status": {
+      "const": "ok"
+    },
+    "rebuilt": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "region",
+          "regionId",
+          "revision",
+          "systems",
+          "stations"
+        ],
+        "properties": {
+          "region": {
+            "enum": [
+              "imperial",
+              "federal",
+              "galaxy"
+            ]
+          },
+          "regionId": {
+            "enum": [
+              "imperial-ngalinn",
+              "federal-canopus",
+              "galaxy"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "systems": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "stations": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 300
+      }
+    }
+  }
+}

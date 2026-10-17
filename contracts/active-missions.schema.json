@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/active-missions.schema.json",
+  "title": "ActiveMissions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "agentVersion",
+    "observedAt",
+    "missions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "agentVersion": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "missions": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/mission"
+      }
+    }
+  },
+  "$defs": {
+    "mission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missionId",
+        "name",
+        "acceptedAt"
+      ],
+      "properties": {
+        "missionId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "localisedName": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "faction": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "destinationSystem": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "destinationStation": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "originSystem": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "originStation": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "acceptedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "detailsKnown": {
+          "type": "boolean"
+        },
+        "cargo": {
+          "$ref": "#/$defs/missionCargo"
+        }
+      }
+    },
+    "missionCargo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total"
+      ],
+      "properties": {
+        "commodity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "commodityLocalised": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "delivered": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "collected": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "sourceMarketId": {
+          "type": "string",
+          "pattern": "^[0-9]{1,20}$"
+        },
+        "sourceSystem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sourceStation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "lost": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/system-observation.schema.json",
+  "title": "SystemObservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "source",
+    "event",
+    "observedAt",
+    "systemAddress",
+    "starSystem",
+    "starPos",
+    "factions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "source": {
+      "const": "journal"
+    },
+    "gameVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "gameBuild": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "event": {
+      "enum": [
+        "FSDJump",
+        "Location"
+      ]
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "systemAddress": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "starSystem": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "starPos": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/galacticCoordinate"
+        },
+        "z": {
+          "$ref": "#/$defs/galacticCoordinate"
+        }
+      }
+    },
+    "systemAllegiance": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/allegiance"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "population": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "controllingFaction": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/factionRef"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "factions": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/factionPresence"
+      }
+    }
+  },
+  "$defs": {
+    "galacticCoordinate": {
+      "type": "number",
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    "allegiance": {
+      "enum": [
+        "Empire",
+        "Federation",
+        "Alliance",
+        "Independent",
+        "Other"
+      ]
+    },
+    "factionName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "factionState": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "factionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "state"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/factionName"
+        },
+        "state": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/factionState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "trendingState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "trend"
+      ],
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/factionState"
+        },
+        "trend": {
+          "type": "integer"
+        }
+      }
+    },
+    "factionPresence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "allegiance",
+        "government",
+        "influence",
+        "state",
+        "activeStates",
+        "pendingStates",
+        "recoveringStates"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/factionName"
+        },
+        "allegiance": {
+          "$ref": "#/$defs/allegiance"
+        },
+        "government": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "influence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "state": {
+          "$ref": "#/$defs/factionState"
+        },
+        "activeStates": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/factionState"
+          }
+        },
+        "pendingStates": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/trendingState"
+          }
+        },
+        "recoveringStates": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/trendingState"
+          }
+        }
+      }
+    }
+  }
+}

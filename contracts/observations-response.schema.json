@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/observations-response.schema.json",
+  "title": "ObservationsResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "accepted",
+    "applied",
+    "unchanged",
+    "skipped",
+    "regions"
+  ],
+  "properties": {
+    "status": {
+      "const": "ok"
+    },
+    "accepted": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "applied": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unchanged": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "index",
+          "reason"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reason": {
+            "enum": [
+              "outside-regions",
+              "unknown-system"
+            ]
+          }
+        }
+      }
+    },
+    "regions": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "region",
+          "dataRevision"
+        ],
+        "properties": {
+          "region": {
+            "enum": [
+              "imperial",
+              "federal"
+            ]
+          },
+          "dataRevision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/bootstrap-manifest.schema.json",
+  "title": "BootstrapManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "regions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "regions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "imperial": {
+          "$ref": "#/$defs/regionEntry"
+        },
+        "federal": {
+          "$ref": "#/$defs/regionEntry"
+        },
+        "galaxy": {
+          "$ref": "#/$defs/regionEntry"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "regionEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "centerSystem",
+        "radiusLy",
+        "systemsIndex"
+      ],
+      "properties": {
+        "centerSystem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "radiusLy": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 50000
+        },
+        "systemsIndex": {
+          "type": "string",
+          "pattern": "^/data/(imperial|federal|galaxy)/systems\\.json$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

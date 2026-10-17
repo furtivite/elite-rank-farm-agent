@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elite.internal/contracts/station-observation.schema.json",
+  "title": "StationObservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "source",
+    "event",
+    "observedAt",
+    "marketId",
+    "stationName",
+    "stationType",
+    "systemAddress",
+    "starSystem",
+    "controllingFaction",
+    "stationAllegiance",
+    "services",
+    "landingPads",
+    "distFromStarLs"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "source": {
+      "const": "journal"
+    },
+    "gameVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "gameBuild": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "event": {
+      "enum": [
+        "Docked",
+        "Location"
+      ]
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "marketId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "stationName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "stationType": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "systemAddress": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "starSystem": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "controllingFaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "state"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    },
+    "stationAllegiance": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/allegiance"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stationGovernment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "services": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64
+      }
+    },
+    "economies": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "proportion"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "proportion": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "landingPads": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "properties": {
+            "small": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "medium": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "large": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "distFromStarLs": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    }
+  },
+  "$defs": {
+    "allegiance": {
+      "enum": [
+        "Empire",
+        "Federation",
+        "Alliance",
+        "Independent",
+        "Other"
+      ]
+    }
+  }
+}
