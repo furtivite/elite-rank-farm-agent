@@ -20,7 +20,10 @@ changes in that version. All versions are on the
 [releases](https://github.com/furtivite/elite-rank-farm-agent/releases) page,
 the full history is in the [changelog](agent/CHANGELOG.md).
 
-Nothing to install: it is a single file. Put it anywhere and double-click it.
+It is a single file: put it anywhere and double-click it. It needs the
+Microsoft Visual C++ Redistributable (x64), which most games install anyway.
+If Windows says `VCRUNTIME140.dll` is missing, install it from
+<https://aka.ms/vs/17/release/vc_redist.x64.exe>.
 
 > Windows may warn that the publisher is unknown: the build has no paid code
 > signature. Click “More info” → “Run anyway”.
@@ -43,17 +46,26 @@ choose “Русский” under “Language · Язык”; the choice is reme
 Only what the site needs, and only from the game journal folder
 (`Saved Games\Frontier Developments\Elite Dangerous`):
 
-- **game journals** — your location, ship and its jump range, ranks and
-  progress, accepted missions, station and faction details;
-- from **`Status.json`** — only fuel and cargo in tons: they change the jump
-  range. Balance, legal status and the rest are not read;
+- **game journals** — your commander name; where you are (system, station,
+  planet) and the systems you visited recently; your ship and what its jump
+  range depends on (jump drive and booster, mass, fuel and cargo capacity);
+  ranks and progress; fines with factions; accepted missions;
+  how long your supercruise legs take; whether the game is running; and the
+  stations, factions and game version you see;
+- from **`Status.json`** — fuel and cargo in tons, because they change the
+  jump range, and four flags (docked, landed, jump drive charging, low fuel)
+  that only decide when to send — the flags themselves are not sent.
+  Balance, legal status and the rest are not read;
 - from **`Cargo.json`** — the total tonnage, and what is in the hold only to
   match it with your Collect and Mining missions. The site gets one number
   per such mission — how much of its commodity you carry — and never the
   list of your cargo.
 
 It sends this **only to the project site**, over HTTPS and with your key.
-The agent reads nothing else on the computer and writes nowhere else.
+Apart from its own folder below, the agent reads nothing else on the
+computer and writes nowhere else. The one exception: on the first start of
+version 0.6.2 or newer it moves its old files from next to the `.exe` into
+that folder.
 
 Its own files — settings, language, keys, the log and the queue of unsent data — live
 in `%APPDATA%\elite-agent`. To remove the agent, delete the `.exe` and that
@@ -61,7 +73,7 @@ folder.
 
 ## Building from source
 
-You need [Rust](https://rustup.rs) 1.82 or newer. The window builds on
+You need [Rust](https://rustup.rs) 1.88 or newer. The window builds on
 Windows only; journal parsing and sending build on any OS.
 
 ```text

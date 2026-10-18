@@ -25,8 +25,8 @@ and `### Русский`.
   hold against such missions and tells the site how much of the commodity is
   aboard — only that number, not your cargo list. Until the goods are
   aboard, the basket keeps the mission but does not send you to hand it in.
-- Works with the site exactly like 0.6.0–0.6.2: you can update when it suits
-  you.
+- Versions 0.6.0–0.6.2 keep working with the site: you can update when it
+  suits you.
 
 ### Русский
 
@@ -39,7 +39,8 @@ and `### Русский`.
   с такими заданиями и сообщает сайту, сколько их товара на борту, — только
   это число, а не список груза. Пока товар не набран, корзина держит задание,
   но сдавать его не зовёт.
-- С сайтом работает так же, как 0.6.0–0.6.2: обновиться можно, когда удобно.
+- Версии 0.6.0–0.6.2 продолжают работать с сайтом: обновиться можно, когда
+  удобно.
 
 ## 0.6.2 — 2026-10-17
 
