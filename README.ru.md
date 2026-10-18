@@ -84,6 +84,10 @@ cargo build --release
 Готовый файл — `agent/target/release/elite-agent.exe`. В `contracts/` —
 схемы данных, которыми агент обменивается с сайтом.
 
+Коммиты — по **[Conventional Commits](https://www.conventionalcommits.org)**.
+Код сайта — в
+**[elite-rank-farm-web](https://github.com/furtivite/elite-rank-farm-web)**.
+
 ## Лицензия
 
 Copyright 2026 Egor Levchenko. Лицензия —

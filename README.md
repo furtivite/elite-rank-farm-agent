@@ -84,6 +84,10 @@ cargo build --release
 The result is `agent/target/release/elite-agent.exe`. `contracts/` holds
 the data schemas the agent exchanges with the site.
 
+Commits follow **[Conventional Commits](https://www.conventionalcommits.org)**.
+The site's code is in
+**[elite-rank-farm-web](https://github.com/furtivite/elite-rank-farm-web)**.
+
 ## License
 
 Copyright 2026 Egor Levchenko. Licensed under the
