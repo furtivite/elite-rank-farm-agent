@@ -11,6 +11,24 @@ is not created.
 Section format · формат раздела: `## <version> — <date>`, then `### English`
 and `### Русский`.
 
+## 0.6.5 — 2026-10-18
+
+### English
+
+- The library the agent uses for its encrypted connection to the site
+  (rustls) is updated to fix a flaw in how such connections are set up.
+  Nothing changes in how the agent works.
+- The release page now lists the SHA-256 of `elite-agent.exe`, so you can
+  check the file you downloaded.
+
+### Русский
+
+- Обновлена библиотека, через которую агент держит зашифрованное соединение
+  с сайтом (rustls): в ней исправлена ошибка установки такого соединения.
+  В работе агента ничего не меняется.
+- На странице релиза теперь есть SHA-256 файла `elite-agent.exe` — им можно
+  проверить скачанное.
+
 ## 0.6.4 — 2026-10-18
 
 ### English

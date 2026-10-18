@@ -46,5 +46,14 @@ jobs:
           if [ "${version%%.*}" = "0" ]; then
             title="$title [beta]"
           fi
+          sha="$(sha256sum agent/target/release/elite-agent.exe | cut -d' ' -f1)"
+          {
+            echo
+            echo '---'
+            echo
+            echo "SHA-256 of \`elite-agent.exe\` · контрольная сумма: \`$sha\`"
+            echo
+            echo 'Check · проверить: `Get-FileHash elite-agent.exe -Algorithm SHA256` (PowerShell).'
+          } >> notes.md
           gh release create "$GITHUB_REF_NAME" agent/target/release/elite-agent.exe \
             --title "$title" --notes-file notes.md

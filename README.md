@@ -28,6 +28,10 @@ If Windows says `VCRUNTIME140.dll` is missing, install it from
 > Windows may warn that the publisher is unknown: the build has no paid code
 > signature. Click “More info” → “Run anyway”.
 
+Each release lists the SHA-256 of `elite-agent.exe`. To check the file you
+downloaded, run `Get-FileHash elite-agent.exe -Algorithm SHA256` in
+PowerShell — the numbers must match.
+
 ## Getting started
 
 1. Sign in on the [site](https://frtvt.com/elite) and, in your account,

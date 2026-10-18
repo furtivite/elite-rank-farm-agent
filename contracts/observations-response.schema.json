@@ -46,7 +46,10 @@
           "reason": {
             "enum": [
               "outside-regions",
-              "unknown-system"
+              "unknown-system",
+              "legacy-galaxy",
+              "test-build",
+              "future-observation"
             ]
           }
         }
