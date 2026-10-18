@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::controls::Ui;
 use super::dpi::{logical, move_control, scaled};
 use super::measure::{line_width, wrapped_height};
@@ -23,6 +25,51 @@ fn natural_width(ui: &Ui) -> i32 {
         .unwrap_or(0);
 
     widest + BUTTON_PADDING + MARGIN * 2
+}
+
+pub(super) fn bind_min_width(ui: &Rc<Ui>) -> Option<native_windows_gui::RawEventHandler> {
+    use windows_sys::Win32::Foundation::RECT;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetClientRect, GetWindowRect, IsIconic, MINMAXINFO, WM_GETMINMAXINFO,
+    };
+
+    const MIN_WIDTH_HANDLER_ID: usize = 0x0001_4548;
+
+    let handle = ui.window.handle;
+    let ui = Rc::clone(ui);
+
+    native_windows_gui::bind_raw_event_handler(
+        &handle,
+        MIN_WIDTH_HANDLER_ID,
+        move |hwnd, msg, _wparam, lparam| {
+            if msg != WM_GETMINMAXINFO || unsafe { IsIconic(hwnd as _) } != 0 {
+                return None;
+            }
+
+            let mut outer = RECT {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+            };
+            let mut inner = RECT {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+            };
+            unsafe {
+                GetWindowRect(hwnd as _, &mut outer);
+                GetClientRect(hwnd as _, &mut inner);
+            }
+            let frame = (outer.right - outer.left) - (inner.right - inner.left);
+
+            let info = unsafe { &mut *(lparam as *mut MINMAXINFO) };
+            info.ptMinTrackSize.x = scaled(natural_width(&ui)) + frame.max(0);
+            Some(0)
+        },
+    )
+    .ok()
 }
 
 fn layout_width(ui: &Ui) -> i32 {

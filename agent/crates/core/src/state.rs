@@ -58,7 +58,7 @@ pub struct CommanderStateBuilder {
     presence: Option<Presence>,
     session_started_at: Option<DateTime<Utc>>,
     ship_label: Option<(String, String)>,
-    suit: Option<String>,
+    suit: Option<(String, Option<String>)>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]

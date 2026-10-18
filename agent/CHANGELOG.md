@@ -11,6 +11,28 @@ is not created.
 Section format · формат раздела: `## <version> — <date>`, then `### English`
 and `### Русский`.
 
+## 0.6.4 — 2026-10-18
+
+### English
+
+- The window can no longer be made narrower than its content: it stops at
+  the width of the widest button, so nothing is cut off at the right edge.
+  The limit follows the chosen language.
+- The suit in the window is named in the window’s language: “Maverick Suit”
+  in English even when the game itself runs in another language. A suit the
+  game left untranslated now gets its real name (“Artemis Suit”) instead of
+  an internal code.
+
+### Русский
+
+- Окно больше не сужается уже своего содержимого: оно останавливается на
+  ширине самой широкой кнопки, и справа ничего не обрезается. Предел
+  зависит от выбранного языка.
+- Скафандр в окне называется на языке окна: в английском окне — «Maverick
+  Suit», даже если сама игра на русском. Скафандр, который игра не
+  перевела, получает настоящее название («Комбинезон Artemis») вместо
+  внутреннего кода.
+
 ## 0.6.3 — 2026-10-18
 
 ### English

@@ -17,13 +17,13 @@ fn card_names_commander_ship_suit_system_and_station() {
     let card = builder.card();
     assert_eq!(card.cmdr.as_deref(), Some("Jameson"));
     assert_eq!(card.ship.as_deref(), Some("Diamondback Explorer"));
-    assert_eq!(card.suit.as_deref(), Some("Комбинезон Maverick"));
+    assert_eq!(card.suit.as_deref(), Some("Maverick Suit"));
     assert_eq!(card.system.as_deref(), Some("Ngalinn"));
     assert_eq!(card.station.as_deref(), Some("Hickam Survey"));
 }
 
 #[test]
-fn untranslated_suit_name_falls_back_to_the_internal_one() {
+fn untranslated_suit_name_still_gets_a_real_name() {
     let mut builder = baseline();
     apply(
         &mut builder,
@@ -32,10 +32,7 @@ fn untranslated_suit_name_falls_back_to_the_internal_one() {
         ],
     );
 
-    assert_eq!(
-        builder.card().suit.as_deref(),
-        Some("explorationsuit_class3")
-    );
+    assert_eq!(builder.card().suit.as_deref(), Some("Artemis Suit"));
 }
 
 #[test]

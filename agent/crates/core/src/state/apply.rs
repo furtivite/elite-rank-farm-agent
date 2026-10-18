@@ -206,12 +206,7 @@ impl CommanderStateBuilder {
                 suit_name,
                 suit_name_localised,
             } => {
-                self.suit = Some(
-                    suit_name_localised
-                        .clone()
-                        .filter(|name| !name.starts_with('$'))
-                        .unwrap_or_else(|| suit_name.clone()),
-                );
+                self.suit = Some((suit_name.clone(), suit_name_localised.clone()));
                 return;
             }
             JournalEvent::Shutdown {} => {

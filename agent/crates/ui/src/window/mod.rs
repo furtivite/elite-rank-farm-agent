@@ -6,7 +6,7 @@ use native_windows_gui as nwg;
 
 use controls::build;
 use dpi::{bind_dpi_change, read_from_system, scaled, UI_FONT_HEIGHT};
-use layout::fit_window;
+use layout::{bind_min_width, fit_window};
 use paint::{bind_theme, hwnd_of, Theme};
 use palette::{current_palette, system_prefers_dark};
 use status::{
@@ -78,6 +78,8 @@ pub fn run(hooks: AppHooks) -> Result<(), String> {
         .set_text(&crate::card::card_text(&crate::CommanderLines::default()));
     fit_window(&ui);
 
+    let min_width_handler = bind_min_width(&ui);
+
     let hooks = Arc::new(hooks);
     let handler = events::bind(&ui, &notice, &hooks, &state, &stored_token, &active);
 
@@ -87,6 +89,9 @@ pub fn run(hooks: AppHooks) -> Result<(), String> {
         nwg::unbind_raw_event_handler(&handler).ok();
     }
     if let Some(handler) = dpi_handler {
+        nwg::unbind_raw_event_handler(&handler).ok();
+    }
+    if let Some(handler) = min_width_handler {
         nwg::unbind_raw_event_handler(&handler).ok();
     }
     for handler in &ui.label_hooks {
