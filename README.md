@@ -86,7 +86,8 @@ the data schemas the agent exchanges with the site.
 
 ## License
 
-[Apache License 2.0](LICENSE).
+Copyright 2026 Egor Levchenko. Licensed under the
+[Apache License 2.0](LICENSE); see also [NOTICE](NOTICE).
 
 ## Legal notice
 

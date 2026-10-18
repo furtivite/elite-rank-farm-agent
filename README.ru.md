@@ -86,7 +86,8 @@ cargo build --release
 
 ## Лицензия
 
-[Apache License 2.0](LICENSE).
+Copyright 2026 Egor Levchenko. Лицензия —
+[Apache License 2.0](LICENSE), см. также [NOTICE](NOTICE).
 
 ## Правовая оговорка
 
