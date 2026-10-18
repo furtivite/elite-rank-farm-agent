@@ -14,10 +14,15 @@ pub enum LockError {
 impl std::fmt::Display for LockError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::AlreadyRunning => write!(f, "агент уже работает — второе окно не нужно"),
-            Self::Unavailable { path, reason } => {
-                write!(f, "не удалось завести замок {}: {reason}", path.display())
-            }
+            Self::AlreadyRunning => f.write_str(&agent_core::tr!(
+                "the agent is already running — no need for a second window",
+                "агент уже работает — второе окно не нужно"
+            )),
+            Self::Unavailable { path, reason } => f.write_str(&agent_core::tr!(
+                "could not create the lock {}: {reason}",
+                "не удалось завести замок {}: {reason}",
+                path.display()
+            )),
         }
     }
 }

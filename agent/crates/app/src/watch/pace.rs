@@ -1,6 +1,6 @@
 use agent_sync::{SendError, SendPace};
 
-use crate::say;
+use crate::say_tr;
 
 pub(super) fn learn_pace(pace: &mut SendPace, error: &SendError, what: &str) {
     let SendError::Retryable {
@@ -15,7 +15,8 @@ pub(super) fn learn_pace(pace: &mut SendPace, error: &SendError, what: &str) {
     let before = pace.interval();
     pace.learn(*retry_after);
     if pace.interval() != before {
-        say!(
+        say_tr!(
+            "  the server asks for less often: {what} interval {} → {} s",
             "  сервер просит реже: интервал {what} {} → {} с",
             before.as_secs(),
             pace.interval().as_secs(),

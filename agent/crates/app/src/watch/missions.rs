@@ -6,7 +6,7 @@ use agent_sync::{SendPace, StateClient};
 
 use super::pace::learn_pace;
 use super::report::token_rejected;
-use crate::say;
+use crate::say_tr;
 
 pub(super) fn missions_due(
     payload: &agent_core::contract::ActiveMissionsPayload,
@@ -34,15 +34,22 @@ pub(super) fn send_missions(
             *last_at = Some(Instant::now());
             match client.put_missions(&payload) {
                 Ok(()) => {
-                    say!("Задания отправлены: {}", payload.missions.len());
+                    say_tr!(
+                        "Missions sent: {}",
+                        "Задания отправлены: {}",
+                        payload.missions.len()
+                    );
                     *last_sent = Some(payload);
                 }
                 Err(error) if error.is_token_rejected() => {
                     return Err(token_rejected(&error.to_string()))
                 }
                 Err(error) => {
-                    say!("не удалось отправить задания: {error}");
-                    learn_pace(pace, &error, "заданий");
+                    say_tr!(
+                        "could not send missions: {error}",
+                        "не удалось отправить задания: {error}"
+                    );
+                    learn_pace(pace, &error, &agent_core::tr!("missions", "заданий"));
                 }
             }
         }

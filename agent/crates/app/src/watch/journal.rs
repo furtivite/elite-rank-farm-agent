@@ -8,8 +8,8 @@ use agent_core::journal::{
 };
 use agent_core::CommanderStateBuilder;
 
-use crate::say;
 use crate::sink::{self, Status};
+use crate::{say, say_tr};
 
 pub(super) fn seed_from_history(
     dir: &Path,
@@ -21,7 +21,11 @@ pub(super) fn seed_from_history(
     })?;
     let Some(latest) = files.last().cloned() else {
         sink::status(Status::Game(false));
-        return Err(format!("{}: нет файлов Journal*.log", dir.display()));
+        return Err(agent_core::tr!(
+            "{}: no Journal*.log files",
+            "{}: нет файлов Journal*.log",
+            dir.display()
+        ));
     };
     sink::status(Status::Game(true));
 
@@ -46,7 +50,11 @@ pub(super) fn seed_from_history(
                     }
                 }
             }
-            Err(error) => say!("{}: ошибка чтения: {error}", path.display()),
+            Err(error) => say_tr!(
+                "{}: read error: {error}",
+                "{}: ошибка чтения: {error}",
+                path.display()
+            ),
         }
         if *path == latest {
             latest_offset = tailer.offset();
@@ -87,7 +95,11 @@ pub(super) fn seed_from_history(
                 }
                 history.record(&file_name, unread.offset());
             }
-            Err(error) => say!("{}: ошибка чтения истории: {error}", path.display()),
+            Err(error) => say_tr!(
+                "{}: history read error: {error}",
+                "{}: ошибка чтения истории: {error}",
+                path.display()
+            ),
         }
     }
 
@@ -96,13 +108,23 @@ pub(super) fn seed_from_history(
 
     let missing = builder.missing();
     if missing.is_empty() {
-        say!("Состояние собрано по истории журналов.");
+        say_tr!(
+            "The state is built from the journal history.",
+            "Состояние собрано по истории журналов."
+        );
     } else {
         let listed: Vec<String> = missing
             .iter()
-            .map(|field| format!("{field:?} (событие {})", field.filled_by()))
+            .map(|field| {
+                agent_core::tr!(
+                    "{field:?} (event {})",
+                    "{field:?} (событие {})",
+                    field.filled_by()
+                )
+            })
             .collect();
-        say!(
+        say_tr!(
+            "The state is still incomplete, waiting for events: {}",
             "Состояние пока неполное, ждём события: {}",
             listed.join(", ")
         );
@@ -111,7 +133,8 @@ pub(super) fn seed_from_history(
     let before_collapse = history_observations.len();
     let history_observations = newest_per_target(history_observations);
     if !history_observations.is_empty() {
-        say!(
+        say_tr!(
+            "From history ({files_backfilled} journals): {} observations after collapsing repeats, was {before_collapse}.",
             "Из истории ({files_backfilled} журн.): {} наблюдений после схлопывания повторов, было {before_collapse}.",
             history_observations.len()
         );
@@ -119,7 +142,8 @@ pub(super) fn seed_from_history(
 
     if !refused.is_empty() {
         let listed: Vec<String> = refused.into_iter().collect();
-        say!(
+        say_tr!(
+            "Some journals gave no observations: {}. This is not an error — their data is not about our galaxy (115.1).",
             "Часть журналов не дала наблюдений: {}. Это не ошибка — данные оттуда не про нашу галактику (115.1).",
             listed.join(", ")
         );
@@ -164,14 +188,20 @@ pub(super) fn save_position(
         return previous;
     }
     if let Err(error) = store.store(&current) {
-        say!("не удалось сохранить позицию журнала: {error}");
+        say_tr!(
+            "could not save the journal position: {error}",
+            "не удалось сохранить позицию журнала: {error}"
+        );
     }
     Some(current)
 }
 
 pub(super) fn store_history(store: &HistoryStore, history: &JournalHistory) {
     if let Err(error) = store.store(history) {
-        say!("не удалось сохранить историю журналов: {error}");
+        say_tr!(
+            "could not save the journal history: {error}",
+            "не удалось сохранить историю журналов: {error}"
+        );
     }
 }
 
@@ -187,7 +217,7 @@ pub(super) fn apply_lines(
         session.apply_line(line);
         match line {
             ParsedLine::Unparsed { reason } => {
-                say!("строка не разобрана: {reason}");
+                say_tr!("line not parsed: {reason}", "строка не разобрана: {reason}");
             }
             ParsedLine::Event(event) if session.accepts_observations() => {
                 fresh.extend(observations_from(event))
@@ -199,7 +229,10 @@ pub(super) fn apply_lines(
     }
 
     if let Some(reason) = session.rejection() {
-        let notice = format!("наблюдения не собираются: {reason}");
+        let notice = agent_core::tr!(
+            "observations are not collected: {reason}",
+            "наблюдения не собираются: {reason}"
+        );
         if said.insert(notice.clone()) {
             say!("{notice}");
         }

@@ -8,7 +8,7 @@ use chrono::Utc;
 use super::observations::{flush_observations, FlushOutcome};
 use super::rebuild::report_rebuild;
 use super::state::send;
-use crate::say;
+use crate::say_tr;
 
 pub(super) struct Leftovers<'a> {
     pub builder: &'a CommanderStateBuilder,
@@ -28,14 +28,18 @@ pub(super) fn finish(
     let reached = match leftovers.builder.build_stopping(Utc::now()) {
         Some(state) => match send(client, pending, &state, pace) {
             Ok(accepted) => {
-                say!(
+                say_tr!(
+                    "The agent is shutting down, the server is notified (updatedAt = {})",
                     "Агент выключается, сервер уведомлён (updatedAt = {})",
                     accepted.updated_at,
                 );
                 true
             }
             Err(error) => {
-                say!("не удалось сообщить о выключении: {error}");
+                say_tr!(
+                    "could not report the shutdown: {error}",
+                    "не удалось сообщить о выключении: {error}"
+                );
                 false
             }
         },
@@ -52,7 +56,10 @@ pub(super) fn finish(
         ) {
             FlushOutcome::Applied => applied = true,
             FlushOutcome::Nothing => {}
-            FlushOutcome::TokenRejected(message) => say!("наблюдения не приняты: {message}"),
+            FlushOutcome::TokenRejected(message) => say_tr!(
+                "observations not accepted: {message}",
+                "наблюдения не приняты: {message}"
+            ),
         }
     }
 

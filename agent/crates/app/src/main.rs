@@ -2,6 +2,7 @@
 
 mod dir;
 mod instance;
+mod language;
 mod log;
 mod probe;
 mod read_token;
@@ -16,7 +17,26 @@ use std::process::ExitCode;
 
 use dir::resolve_journal_dir;
 
-const USAGE: &str = "\
+const USAGE_EN: &str = "\
+elite-agent — Elite Dangerous Rank Farm Navigator
+
+    elite-agent [<journal folder>]           read the journals and show the state
+    elite-agent send [<journal folder>]      send the state once
+    elite-agent watch [<journal folder>]     watch the journal and send
+                                             on change
+    elite-agent rebuild                      ask the server to rebuild
+                                             the galaxy snapshot
+
+Without arguments on Windows the agent window opens.
+
+Without a folder on Windows the agent uses
+%USERPROFILE%\\Saved Games\\Frontier Developments\\Elite Dangerous.
+
+Sending is set up in the agent window, in the elite-agent.json file in
+%APPDATA%\\elite-agent, or with the ELITE_AGENT_BASE_URL and
+ELITE_AGENT_DEVICE_TOKEN variables.";
+
+const USAGE_RU: &str = "\
 elite-agent — Elite Dangerous Rank Farm Navigator
 
     elite-agent [<каталог журналов>]         прочитать журналы и показать состояние
@@ -35,8 +55,17 @@ elite-agent — Elite Dangerous Rank Farm Navigator
 %APPDATA%\\elite-agent либо переменные ELITE_AGENT_BASE_URL и
 ELITE_AGENT_DEVICE_TOKEN.";
 
+fn usage() -> &'static str {
+    match agent_core::lang() {
+        agent_core::Lang::En => USAGE_EN,
+        agent_core::Lang::Ru => USAGE_RU,
+    }
+}
+
 fn main() -> ExitCode {
     let moved = relocate::move_old_files(&dir::executable_dir(), &dir::data_dir());
+
+    agent_core::set_lang(language::load(&language::settings_path()));
 
     let mut args = std::env::args().skip(1);
     let first = args.next();
@@ -46,7 +75,8 @@ fn main() -> ExitCode {
     }
 
     if !moved.is_empty() {
-        log::append(&format!(
+        log::append(&agent_core::tr!(
+            "agent files moved from next to the program to {}: {}",
             "файлы агента перенесены из-под программы в {}: {}",
             dir::data_dir().display(),
             moved.join(", ")
@@ -55,7 +85,8 @@ fn main() -> ExitCode {
 
     if cfg!(windows) && first.is_none() {
         ui::install_panic_alert();
-        log::append(&format!(
+        log::append(&agent_core::tr!(
+            "agent window started, version {}",
             "запуск окна агента, версия {}",
             env!("CARGO_PKG_VERSION")
         ));
@@ -71,12 +102,21 @@ fn main() -> ExitCode {
 
         return match ui::run() {
             Ok(()) => {
-                log::append("окно агента закрыто");
+                log::append(&agent_core::tr!(
+                    "agent window closed",
+                    "окно агента закрыто"
+                ));
                 ExitCode::SUCCESS
             }
             Err(reason) => {
-                log::append(&format!("окно агента не открылось: {reason}"));
-                ui::alert(&format!("Окно агента не открылось.\n\n{reason}"));
+                log::append(&agent_core::tr!(
+                    "the agent window did not open: {reason}",
+                    "окно агента не открылось: {reason}"
+                ));
+                ui::alert(&agent_core::tr!(
+                    "The agent window did not open.\n\n{reason}",
+                    "Окно агента не открылось.\n\n{reason}"
+                ));
                 ExitCode::FAILURE
             }
         };
@@ -84,7 +124,7 @@ fn main() -> ExitCode {
 
     let (command, path) = match first.as_deref() {
         Some("--help" | "-h") => {
-            println!("{USAGE}");
+            println!("{}", usage());
             return ExitCode::SUCCESS;
         }
         Some("send") => (Command::Send, args.next()),
@@ -106,11 +146,14 @@ fn main() -> ExitCode {
     let dir = match resolve_journal_dir(path) {
         Ok(dir) => dir,
         Err(reason) => {
-            eprintln!("{reason}\n\n{USAGE}");
+            eprintln!("{reason}\n\n{}", usage());
             return ExitCode::FAILURE;
         }
     };
-    println!("Каталог журналов: {}", dir.display());
+    println!(
+        "{}",
+        agent_core::tr!("Journal folder: {}", "Каталог журналов: {}", dir.display())
+    );
 
     let _lock = if matches!(command, Command::Watch) {
         match take_lock() {

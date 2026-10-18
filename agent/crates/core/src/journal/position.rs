@@ -21,11 +21,11 @@ impl std::fmt::Display for PositionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Io { path, reason } => write!(f, "{}: {reason}", path.display()),
-            Self::Malformed { path, reason } => write!(
-                f,
+            Self::Malformed { path, reason } => f.write_str(&crate::tr!(
+                "{}: not readable as a journal position: {reason}",
                 "{}: не разбирается как позиция журнала: {reason}",
                 path.display()
-            ),
+            )),
         }
     }
 }

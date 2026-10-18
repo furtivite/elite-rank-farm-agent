@@ -7,13 +7,20 @@ pub fn resolve_journal_dir(argument: Option<String>) -> Result<PathBuf, String> 
         return Ok(PathBuf::from(argument));
     }
     if cfg!(windows) {
-        let profile = std::env::var("USERPROFILE")
-            .map_err(|_| "не задан USERPROFILE — укажите каталог журналов аргументом".to_owned())?;
+        let profile = std::env::var("USERPROFILE").map_err(|_| {
+            agent_core::tr!(
+                "USERPROFILE is not set — give the journal folder as an argument",
+                "не задан USERPROFILE — укажите каталог журналов аргументом"
+            )
+        })?;
         let mut path = PathBuf::from(profile).join("Saved Games");
         path.extend(JOURNAL_DIR_COMPONENTS);
         return Ok(path);
     }
-    Err("укажите каталог журналов аргументом".to_owned())
+    Err(agent_core::tr!(
+        "give the journal folder as an argument",
+        "укажите каталог журналов аргументом"
+    ))
 }
 
 pub fn data_dir() -> PathBuf {

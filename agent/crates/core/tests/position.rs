@@ -74,7 +74,7 @@ fn malformed_file_is_reported_not_ignored() {
     fs::write(store.path(), "{not json").unwrap();
 
     let error = store.load().unwrap_err();
-    assert!(error.to_string().contains("позиция журнала"), "{error}");
+    assert!(error.to_string().contains("journal position"), "{error}");
 }
 
 #[test]

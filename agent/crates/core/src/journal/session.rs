@@ -22,9 +22,11 @@ pub enum SessionRejection {
 impl std::fmt::Display for SessionRejection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LegacyGalaxy => write!(f, "галактика Legacy"),
-            Self::TestBuild => write!(f, "альфа или бета игры"),
-            Self::Arena => write!(f, "арена CQC"),
+            Self::LegacyGalaxy => f.write_str(&crate::tr!("the Legacy galaxy", "галактика Legacy")),
+            Self::TestBuild => {
+                f.write_str(&crate::tr!("a game alpha or beta", "альфа или бета игры"))
+            }
+            Self::Arena => f.write_str(&crate::tr!("the CQC arena", "арена CQC")),
         }
     }
 }

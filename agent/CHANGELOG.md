@@ -11,6 +11,36 @@ is not created.
 Section format · формат раздела: `## <version> — <date>`, then `### English`
 and `### Русский`.
 
+## 0.6.3 — 2026-10-18
+
+### English
+
+- **The agent speaks English by default.** Russian can be chosen in the
+  settings (⚙ → “Language · Язык”); the choice is kept between starts, in
+  `%APPDATA%\elite-agent` with the rest of the agent files.
+- Switching takes effect at once — the window and the output — without a
+  restart.
+- When a newer version is out, the agent now also says where to download it.
+- **Collect and Mining missions know what you carry.** The agent checks the
+  hold against such missions and tells the site how much of the commodity is
+  aboard — only that number, not your cargo list. Until the goods are
+  aboard, the basket keeps the mission but does not send you to hand it in.
+- Works with the site exactly like 0.6.0–0.6.2: you can update when it suits
+  you.
+
+### Русский
+
+- **Агент по умолчанию говорит по-английски.** Русский выбирается в
+  настройках (⚙ → «Language · Язык»); выбор сохраняется между запусками — в
+  `%APPDATA%\elite-agent`, вместе с остальными файлами агента.
+- Язык меняется сразу — и в окне, и в выводе — без перезапуска.
+- Когда вышла новая версия, агент теперь говорит и где её скачать.
+- **Задания Collect и Mining знают, что у вас в трюме.** Агент сверяет трюм
+  с такими заданиями и сообщает сайту, сколько их товара на борту, — только
+  это число, а не список груза. Пока товар не набран, корзина держит задание,
+  но сдавать его не зовёт.
+- С сайтом работает так же, как 0.6.0–0.6.2: обновиться можно, когда удобно.
+
 ## 0.6.2 — 2026-10-17
 
 ### English

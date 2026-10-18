@@ -135,6 +135,11 @@
           "minLength": 1,
           "maxLength": 128
         },
+        "inHold": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
         "lost": {
           "type": "integer",
           "minimum": 1,

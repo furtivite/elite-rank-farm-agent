@@ -4,9 +4,11 @@ use std::rc::Rc;
 use native_windows_gui as nwg;
 
 use super::dpi::{scaled, OUTPUT_FONT_HEIGHT};
+use super::language::build_radios;
 use super::paint::{make_owner_drawn, plain_label};
 use super::palette::apply_dark_title_bar;
 use crate::icon::{set_window_icons, WindowIcons};
+use crate::text::{texts, Language, Texts, LANGUAGE_LABEL};
 use crate::theme::Palette;
 use crate::window_title;
 
@@ -19,6 +21,9 @@ pub(super) struct Ui {
     pub(super) disclaimer: nwg::Label,
     pub(super) separator: nwg::Label,
     pub(super) label_hooks: Vec<nwg::RawEventHandler>,
+    pub(super) language_label: nwg::Label,
+    pub(super) english_radio: nwg::RadioButton,
+    pub(super) russian_radio: nwg::RadioButton,
     pub(super) server_label: nwg::Label,
     pub(super) server_input: nwg::TextInput,
     pub(super) agent_token_label: nwg::Label,
@@ -41,9 +46,14 @@ pub(super) struct Ui {
     pub(super) output: nwg::RichTextBox,
     pub(super) panels: Panels,
     pub(super) palette: Rc<std::cell::Cell<Palette>>,
+    pub(super) language: Cell<Language>,
 }
 
 impl Ui {
+    pub(super) fn texts(&self) -> &'static Texts {
+        texts(self.language.get())
+    }
+
     pub(super) fn buttons(&self) -> [&nwg::Button; 13] {
         [
             &self.watch_button,
@@ -75,15 +85,17 @@ pub(super) fn build(
     dark: bool,
     palette: Palette,
     palette_cell: &Rc<Cell<Palette>>,
+    language: Language,
 ) -> Result<(Ui, nwg::Notice), String> {
+    let t = texts(language);
     let mut window = nwg::Window::default();
     nwg::Window::builder()
         .size((scaled(200), scaled(200)))
         .position((300, 180))
-        .title(&window_title())
+        .title(&window_title(language))
         .flags(nwg::WindowFlags::MAIN_WINDOW | nwg::WindowFlags::VISIBLE)
         .build(&mut window)
-        .map_err(|error| format!("не удалось создать окно: {error}"))?;
+        .map_err(|error| format!("{}: {error}", t.window_failed))?;
 
     let mut status = nwg::Label::default();
     let mut card = nwg::Label::default();
@@ -92,6 +104,7 @@ pub(super) fn build(
     let mut token_label = nwg::Label::default();
     let mut disclaimer = nwg::Label::default();
     let mut separator = nwg::Label::default();
+    let mut language_label = nwg::Label::default();
 
     let label = |target: &mut nwg::Label, text: &str| -> Result<(), String> {
         nwg::Label::builder()
@@ -121,10 +134,10 @@ pub(super) fn build(
             .map_err(|error| error.to_string())?;
     }
 
-    label(
-        &mut server_label,
-        "Адрес сервера, например https://пример.ру",
-    )?;
+    label(&mut language_label, LANGUAGE_LABEL)?;
+    let (english_radio, russian_radio) = build_radios(&window)?;
+
+    label(&mut server_label, "")?;
 
     let mut server_input = nwg::TextInput::default();
     nwg::TextInput::builder()
@@ -133,10 +146,7 @@ pub(super) fn build(
         .build(&mut server_input)
         .map_err(|error| error.to_string())?;
 
-    label(
-        &mut agent_token_label,
-        "Ключ агента — им отправляется состояние",
-    )?;
+    label(&mut agent_token_label, "")?;
 
     let mut agent_token_input = nwg::TextInput::default();
     nwg::TextInput::builder()
@@ -145,7 +155,7 @@ pub(super) fn build(
         .build(&mut agent_token_input)
         .map_err(|error| error.to_string())?;
 
-    label(&mut token_label, "Ключ для сайта — только чтение")?;
+    label(&mut token_label, "")?;
 
     let mut token_input = nwg::TextInput::default();
     nwg::TextInput::builder()
@@ -154,10 +164,7 @@ pub(super) fn build(
         .build(&mut token_input)
         .map_err(|error| error.to_string())?;
 
-    label(
-        &mut disclaimer,
-        "Неофициальный фанатский проект. Не связан с Frontier Developments plc и не одобрен ею.\r\nElite Dangerous и связанные материалы принадлежат правообладателям.",
-    )?;
+    label(&mut disclaimer, "")?;
 
     label(&mut separator, "")?;
 
@@ -169,6 +176,7 @@ pub(super) fn build(
         &token_label,
         &disclaimer,
         &separator,
+        &language_label,
     ]
     .into_iter()
     .filter_map(plain_label)
@@ -184,19 +192,19 @@ pub(super) fn build(
     let mut resync_button = nwg::Button::default();
     let mut edit_agent_token_button = nwg::Button::default();
 
-    for (target, text) in [
-        (&mut save_sync_button, "Сохранить"),
-        (&mut edit_agent_token_button, "Изменить ключ агента"),
-        (&mut save_button, "Сохранить"),
-        (&mut copy_button, "Копировать"),
-        (&mut reset_button, "Сбросить"),
-        (&mut dashboard_button, "Открыть сайт"),
-        (&mut logs_button, "Открыть логи"),
-        (&mut logs_dir_button, "Папка с логами"),
-        (&mut resync_button, "Отправить всё заново"),
+    for target in [
+        &mut save_sync_button,
+        &mut edit_agent_token_button,
+        &mut save_button,
+        &mut copy_button,
+        &mut reset_button,
+        &mut dashboard_button,
+        &mut logs_button,
+        &mut logs_dir_button,
+        &mut resync_button,
     ] {
         nwg::Button::builder()
-            .text(text)
+            .text("")
             .parent(&window)
             .build(target)
             .map_err(|error| error.to_string())?;
@@ -220,7 +228,7 @@ pub(super) fn build(
         .family("Consolas")
         .size_absolute(scaled(OUTPUT_FONT_HEIGHT as i32) as u32)
         .build(&mut output_font)
-        .map_err(|error| format!("не удалось выбрать шрифт вывода: {error}"))?;
+        .map_err(|error| format!("{}: {error}", t.output_font_failed))?;
     output.set_font(Some(&output_font));
 
     output.set_background_color(palette.field);
@@ -260,6 +268,9 @@ pub(super) fn build(
             disclaimer,
             separator,
             label_hooks,
+            language_label,
+            english_radio,
+            russian_radio,
             server_label,
             server_input,
             agent_token_label,
@@ -282,6 +293,7 @@ pub(super) fn build(
             output,
             panels: Panels::default(),
             palette: Rc::clone(palette_cell),
+            language: Cell::new(language),
         },
         notice,
     ))

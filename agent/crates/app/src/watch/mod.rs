@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use agent_core::journal::{
-    newest_per_target, GameSession, HistoryStore, JournalHistory, Observation, PositionStore,
+    read_free_cargo, GameSession, HistoryStore, JournalHistory, PositionStore,
 };
 use agent_core::CommanderState;
 use agent_sync::{
@@ -16,14 +16,14 @@ use journal::{
     apply_lines, file_name_of, save_position, seed_from_history, store_history, SeededHistory,
 };
 use missions::send_missions;
-use observations::{flush_observations, FlushOutcome};
+use observations::{flush_observations, load_queue, FlushOutcome};
 use rebuild::report_rebuild;
 use report::{report_status, token_rejected};
 use state::{read_ship, send, update_line};
 
 use crate::dir::data_dir;
-use crate::say;
 use crate::sink::{self, Status};
+use crate::{say, say_tr};
 
 mod finish;
 mod journal;
@@ -58,13 +58,16 @@ pub fn run_until(journal_dir: &Path, running: &AtomicBool) -> Result<(), String>
     let positions = PositionStore::in_dir(&data_dir());
     let observations = ObservationQueue::in_dir(&data_dir());
 
-    say!("Отправка на {}", config.state_url());
+    say_tr!("Sending to {}", "Отправка на {}", config.state_url());
 
     let histories = HistoryStore::in_dir(&data_dir());
     let mut history = match histories.load() {
         Ok(loaded) => loaded,
         Err(error) => {
-            say!("история журналов не прочиталась ({error}), разбираю заново");
+            say_tr!(
+                "the journal history could not be read ({error}), parsing again",
+                "история журналов не прочиталась ({error}), разбираю заново"
+            );
             JournalHistory::default()
         }
     };
@@ -95,37 +98,14 @@ pub fn run_until(journal_dir: &Path, running: &AtomicBool) -> Result<(), String>
     let mut last_status_line: Option<String> = None;
     let mut last_status_at = Instant::now();
     let mut last_card = None;
-    let mut queued: Vec<Observation> = match observations.load() {
-        Ok(loaded) => loaded,
-        Err(error) => {
-            say!("очередь наблюдений не прочиталась: {error}");
-            Vec::new()
-        }
-    };
-    if !queued.is_empty() {
-        say!("В очереди наблюдений с прошлого запуска: {}", queued.len());
-    }
-
-    if !history_observations.is_empty() {
-        let before = queued.len();
-        queued.extend(history_observations);
-        queued = newest_per_target(queued);
-        if let Err(error) = observations.replace(&queued) {
-            say!("не удалось записать очередь наблюдений: {error}");
-        }
-        if first_run {
-            say!(
-                "Первый запуск: досылаю историю наблюдений — {} записей в очереди.",
-                queued.len()
-            );
-        } else {
-            say!("Из истории добавлено наблюдений: {}", queued.len() - before);
-        }
-    }
+    let mut queued = load_queue(&observations, history_observations, first_run);
 
     store_history(&histories, &history);
 
-    say!("Слежу за журналом. Ctrl+C — выход.\n");
+    say_tr!(
+        "Watching the journal. Ctrl+C to quit.\n",
+        "Слежу за журналом. Ctrl+C — выход.\n"
+    );
 
     while running.load(Ordering::SeqCst) {
         match watcher.poll() {
@@ -147,13 +127,19 @@ pub fn run_until(journal_dir: &Path, running: &AtomicBool) -> Result<(), String>
 
                 if !fresh.is_empty() {
                     if let Err(error) = observations.append(&fresh) {
-                        say!("не удалось записать очередь наблюдений: {error}");
+                        say_tr!(
+                            "could not write the observation queue: {error}",
+                            "не удалось записать очередь наблюдений: {error}"
+                        );
                     }
                     queued.extend(fresh);
                 }
             }
             Err(error) => {
-                say!("ошибка чтения журнала: {error}");
+                say_tr!(
+                    "journal read error: {error}",
+                    "ошибка чтения журнала: {error}"
+                );
             }
         }
         let moved = save_position(&positions, &watcher, saved_position.clone());
@@ -185,6 +171,7 @@ pub fn run_until(journal_dir: &Path, running: &AtomicBool) -> Result<(), String>
             report_rebuild(&client, &mut said_warnings);
         }
 
+        missions.set_free_cargo(read_free_cargo(journal_dir, builder.session_started_at()));
         send_missions(
             &client,
             &missions,
@@ -220,10 +207,14 @@ pub fn run_until(journal_dir: &Path, running: &AtomicBool) -> Result<(), String>
                         let updated_at = accepted.updated_at;
                         sink::status(Status::Connection(true));
                         sink::status(Status::LastSync(updated_at.clone()));
-                        say!(
+                        say_tr!(
+                            "{} · {} → sent, updatedAt = {updated_at}",
                             "{} · {} → отправлено, updatedAt = {updated_at}",
                             state.current_system.name,
-                            state.current_station.as_deref().unwrap_or("в космосе"),
+                            state
+                                .current_station
+                                .clone()
+                                .unwrap_or_else(|| agent_core::tr!("in space", "в космосе")),
                         );
 
                         if !update_reported {
@@ -242,7 +233,7 @@ pub fn run_until(journal_dir: &Path, running: &AtomicBool) -> Result<(), String>
                     }
                     Err(error) if error.is_retryable() => {
                         sink::status(Status::Connection(false));
-                        say!("не отправлено: {error}");
+                        say_tr!("not sent: {error}", "не отправлено: {error}");
                         last_send_at = Some(Instant::now());
                     }
                     Err(error) if error.is_token_rejected() => {
@@ -251,7 +242,10 @@ pub fn run_until(journal_dir: &Path, running: &AtomicBool) -> Result<(), String>
                     }
                     Err(error) => {
                         sink::status(Status::Connection(false));
-                        return Err(format!("{error}\nЦикл остановлен."));
+                        return Err(agent_core::tr!(
+                            "{error}\nThe loop is stopped.",
+                            "{error}\nЦикл остановлен."
+                        ));
                     }
                 }
             }

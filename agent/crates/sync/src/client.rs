@@ -2,88 +2,14 @@ use std::time::Duration;
 
 use agent_core::contract::ActiveMissionsPayload;
 use agent_core::journal::Observation;
-use agent_core::{CommanderState, ContractViolation};
+use agent_core::CommanderState;
 use serde::{Deserialize, Serialize};
+
+use crate::send_error::SendError;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
 
 pub const MIN_SEND_INTERVAL: Duration = Duration::from_secs(5);
-
-pub const TOKEN_HINT: &str = "Ключ агента больше не действует. Откройте кабинет, раздел \
-     «Ключ агента»: «Перевыпустить», затем «Скачать elite-agent.json». Положите файл рядом с \
-     elite-agent.exe или вставьте ключ в поле «Ключ агента» в окне агента.";
-
-#[derive(Debug)]
-pub enum SendError {
-    Contract(Vec<ContractViolation>),
-    Transport(String),
-    Retryable {
-        status: u16,
-        message: String,
-        retry_after: Option<Duration>,
-    },
-    Rejected {
-        status: u16,
-        message: String,
-    },
-}
-
-impl SendError {
-    pub fn is_retryable(&self) -> bool {
-        matches!(self, Self::Transport(_) | Self::Retryable { .. })
-    }
-
-    pub fn hint(&self) -> Option<&'static str> {
-        match self {
-            Self::Rejected {
-                status: 401 | 403, ..
-            } => Some(TOKEN_HINT),
-            _ => None,
-        }
-    }
-
-    pub fn is_token_rejected(&self) -> bool {
-        matches!(
-            self,
-            Self::Rejected {
-                status: 401 | 403,
-                ..
-            }
-        )
-    }
-}
-
-impl std::fmt::Display for SendError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Contract(violations) => {
-                let listed: Vec<String> = violations.iter().map(ToString::to_string).collect();
-                write!(
-                    f,
-                    "payload не соответствует контракту: {}",
-                    listed.join("; ")
-                )
-            }
-            Self::Transport(reason) => write!(f, "сеть недоступна: {reason}"),
-            Self::Retryable {
-                status,
-                message,
-                retry_after,
-            } => {
-                write!(f, "сервер ответил {status}: {message}")?;
-                if let Some(delay) = retry_after {
-                    write!(f, " (повтор через {} с)", delay.as_secs())?;
-                }
-                Ok(())
-            }
-            Self::Rejected { status, message } => {
-                write!(f, "запрос отклонён, {status}: {message}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for SendError {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -199,13 +125,13 @@ impl StateClient {
         let body = response
             .into_body()
             .read_to_string()
-            .unwrap_or_else(|error| format!("тело ответа не прочиталось: {error}"));
+            .unwrap_or_else(|error| unreadable_body(&error));
 
         classify_status(status, &body)?;
 
         serde_json::from_str::<ObservationsAccepted>(&body).map_err(|error| SendError::Rejected {
             status,
-            message: format!("ответ 200, но тело не разобралось: {error}"),
+            message: unparsed_body(&error),
         })
     }
 
@@ -222,7 +148,7 @@ impl StateClient {
         let body = response
             .into_body()
             .read_to_string()
-            .unwrap_or_else(|error| format!("тело ответа не прочиталось: {error}"));
+            .unwrap_or_else(|error| unreadable_body(&error));
 
         classify_status(status, &body)
     }
@@ -240,13 +166,13 @@ impl StateClient {
         let body = response
             .into_body()
             .read_to_string()
-            .unwrap_or_else(|error| format!("тело ответа не прочиталось: {error}"));
+            .unwrap_or_else(|error| unreadable_body(&error));
 
         classify_status(status, &body)?;
 
         serde_json::from_str::<RebuildAccepted>(&body).map_err(|error| SendError::Rejected {
             status,
-            message: format!("ответ 200, но тело не разобралось: {error}"),
+            message: unparsed_body(&error),
         })
     }
 
@@ -268,13 +194,13 @@ impl StateClient {
         let body = response
             .into_body()
             .read_to_string()
-            .unwrap_or_else(|error| format!("тело ответа не прочиталось: {error}"));
+            .unwrap_or_else(|error| unreadable_body(&error));
 
         classify_status(status, &body)?;
 
         serde_json::from_str::<SendAccepted>(&body).map_err(|error| SendError::Rejected {
             status,
-            message: format!("ответ 200, но тело не разобралось: {error}"),
+            message: unparsed_body(&error),
         })
     }
 }
@@ -302,11 +228,27 @@ fn classify_status(status: u16, body: &str) -> Result<(), SendError> {
     })
 }
 
+fn unreadable_body(error: &dyn std::fmt::Display) -> String {
+    agent_core::tr!(
+        "response body unreadable: {error}",
+        "тело ответа не прочиталось: {error}"
+    )
+}
+
+fn unparsed_body(error: &serde_json::Error) -> String {
+    agent_core::tr!(
+        "answer 200, but the body did not parse: {error}",
+        "ответ 200, но тело не разобралось: {error}"
+    )
+}
+
 fn describe(parsed: Option<ErrorBody>, body: &str) -> String {
     let Some(parsed) = parsed else {
         return body.chars().take(200).collect();
     };
-    let message = parsed.message.unwrap_or_else(|| "без описания".to_owned());
+    let message = parsed
+        .message
+        .unwrap_or_else(|| agent_core::tr!("no description", "без описания"));
     match parsed.errors {
         Some(errors) => format!("{message} {errors}"),
         None => message,

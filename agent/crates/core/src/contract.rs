@@ -101,10 +101,7 @@ impl CommanderState {
         if self.schema_version != SCHEMA_VERSION {
             violations.push(ContractViolation {
                 field: "schemaVersion",
-                reason: format!(
-                    "ожидается {SCHEMA_VERSION}, получено {}",
-                    self.schema_version
-                ),
+                reason: expected(SCHEMA_VERSION, self.schema_version),
             });
         }
         check_string("commanderName", &self.commander_name, 64, &mut violations);
@@ -129,10 +126,7 @@ impl CommanderState {
         if !(self.jump_range_ly > 0.0 && self.jump_range_ly <= MAX_JUMP_RANGE_LY) {
             violations.push(ContractViolation {
                 field: "jumpRangeLy",
-                reason: format!(
-                    "ожидается 0 < x <= {MAX_JUMP_RANGE_LY}, получено {}",
-                    self.jump_range_ly
-                ),
+                reason: expected(format!("0 < x <= {MAX_JUMP_RANGE_LY}"), self.jump_range_ly),
             });
         }
         check_rank("imperialRank", self.imperial_rank, &mut violations);
@@ -144,6 +138,13 @@ impl CommanderState {
     }
 }
 
+fn expected(range: impl std::fmt::Display, got: impl std::fmt::Display) -> String {
+    crate::tr!(
+        "expected {range}, got {got}",
+        "ожидается {range}, получено {got}"
+    )
+}
+
 fn check_string(
     field: &'static str,
     value: &str,
@@ -153,7 +154,10 @@ fn check_string(
     if value.is_empty() {
         violations.push(ContractViolation {
             field,
-            reason: "minLength 1, получена пустая строка".to_owned(),
+            reason: crate::tr!(
+                "minLength 1, got an empty string",
+                "minLength 1, получена пустая строка"
+            ),
         });
         return;
     }
@@ -170,7 +174,10 @@ fn check_max_len(
     if len > max_len {
         violations.push(ContractViolation {
             field,
-            reason: format!("maxLength {max_len}, получено {len}"),
+            reason: crate::tr!(
+                "maxLength {max_len}, got {len}",
+                "maxLength {max_len}, получено {len}"
+            ),
         });
     }
 }
@@ -179,7 +186,7 @@ fn check_coordinate(field: &'static str, value: f64, violations: &mut Vec<Contra
     if !value.is_finite() || value.abs() > COORDINATE_LIMIT {
         violations.push(ContractViolation {
             field,
-            reason: format!("ожидается +-{COORDINATE_LIMIT} ly, получено {value}"),
+            reason: expected(format!("+-{COORDINATE_LIMIT} ly"), value),
         });
     }
 }
@@ -188,7 +195,7 @@ fn check_rank(field: &'static str, value: u8, violations: &mut Vec<ContractViola
     if value > MAX_RANK_INDEX {
         violations.push(ContractViolation {
             field,
-            reason: format!("ожидается 0..={MAX_RANK_INDEX}, получено {value}"),
+            reason: expected(format!("0..={MAX_RANK_INDEX}"), value),
         });
     }
 }
@@ -197,7 +204,7 @@ fn check_progress(field: &'static str, value: f64, violations: &mut Vec<Contract
     if !value.is_finite() || !(0.0..=100.0).contains(&value) {
         violations.push(ContractViolation {
             field,
-            reason: format!("ожидается 0..=100, получено {value}"),
+            reason: expected("0..=100", value),
         });
     }
 }
@@ -250,6 +257,8 @@ pub struct MissionCargo {
     pub collected: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_market_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub in_hold: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lost: Option<u32>,
 }

@@ -1,8 +1,8 @@
-use agent_core::journal::Observation;
+use agent_core::journal::{newest_per_target, Observation};
 use agent_sync::{ObservationQueue, SendPace, StateClient, MAX_BATCH};
 
 use super::pace::learn_pace;
-use crate::say;
+use crate::say_tr;
 
 pub(super) fn flush_observations(
     client: &StateClient,
@@ -17,10 +17,14 @@ pub(super) fn flush_observations(
         Ok(accepted) => {
             queued.drain(..batch_size);
             if let Err(error) = queue.replace(queued) {
-                say!("очередь наблюдений не перезаписалась: {error}");
+                say_tr!(
+                    "the observation queue was not rewritten: {error}",
+                    "очередь наблюдений не перезаписалась: {error}"
+                );
             }
 
-            say!(
+            say_tr!(
+                "  observations: sent {}, applied {}, unchanged {}{}",
                 "  наблюдения: отправлено {}, применено {}, без изменений {}{}",
                 accepted.accepted,
                 accepted.applied,
@@ -28,7 +32,8 @@ pub(super) fn flush_observations(
                 if accepted.skipped.is_empty() {
                     String::new()
                 } else {
-                    format!(
+                    agent_core::tr!(
+                        ", skipped by the server {} ({})",
                         ", пропущено сервером {} ({})",
                         accepted.skipped.len(),
                         skip_reasons(&accepted.skipped),
@@ -37,7 +42,11 @@ pub(super) fn flush_observations(
             );
 
             if !queued.is_empty() {
-                say!("  осталось в очереди: {}", queued.len());
+                say_tr!(
+                    "  left in the queue: {}",
+                    "  осталось в очереди: {}",
+                    queued.len()
+                );
             }
 
             return if accepted.applied > 0 {
@@ -47,22 +56,82 @@ pub(super) fn flush_observations(
             };
         }
         Err(error) if error.is_retryable() => {
-            say!("  наблюдения не отправлены: {error}");
-            learn_pace(pace, &error, "наблюдений");
+            say_tr!(
+                "  observations not sent: {error}",
+                "  наблюдения не отправлены: {error}"
+            );
+            learn_pace(pace, &error, &agent_core::tr!("observations", "наблюдений"));
         }
         Err(error) if error.is_token_rejected() => {
             return FlushOutcome::TokenRejected(error.to_string());
         }
         Err(error) => {
-            say!("  наблюдения отклонены и выброшены ({batch_size} шт.): {error}");
+            say_tr!(
+                "  observations rejected and dropped ({batch_size}): {error}",
+                "  наблюдения отклонены и выброшены ({batch_size} шт.): {error}"
+            );
             queued.drain(..batch_size);
             if let Err(error) = queue.replace(queued) {
-                say!("очередь наблюдений не перезаписалась: {error}");
+                say_tr!(
+                    "the observation queue was not rewritten: {error}",
+                    "очередь наблюдений не перезаписалась: {error}"
+                );
             }
         }
     }
 
     FlushOutcome::Nothing
+}
+
+pub(super) fn load_queue(
+    observations: &ObservationQueue,
+    history_observations: Vec<Observation>,
+    first_run: bool,
+) -> Vec<Observation> {
+    let mut queued: Vec<Observation> = match observations.load() {
+        Ok(loaded) => loaded,
+        Err(error) => {
+            say_tr!(
+                "the observation queue could not be read: {error}",
+                "очередь наблюдений не прочиталась: {error}"
+            );
+            Vec::new()
+        }
+    };
+    if !queued.is_empty() {
+        say_tr!(
+            "Observations queued since the last run: {}",
+            "В очереди наблюдений с прошлого запуска: {}",
+            queued.len()
+        );
+    }
+
+    if !history_observations.is_empty() {
+        let before = queued.len();
+        queued.extend(history_observations);
+        queued = newest_per_target(queued);
+        if let Err(error) = observations.replace(&queued) {
+            say_tr!(
+                "could not write the observation queue: {error}",
+                "не удалось записать очередь наблюдений: {error}"
+            );
+        }
+        if first_run {
+            say_tr!(
+                "First run: sending the observation history — {} entries queued.",
+                "Первый запуск: досылаю историю наблюдений — {} записей в очереди.",
+                queued.len()
+            );
+        } else {
+            say_tr!(
+                "Observations added from history: {}",
+                "Из истории добавлено наблюдений: {}",
+                queued.len() - before
+            );
+        }
+    }
+
+    queued
 }
 
 pub(super) enum FlushOutcome {

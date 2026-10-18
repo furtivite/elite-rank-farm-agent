@@ -2,35 +2,44 @@ use std::time::{Duration, Instant};
 
 use agent_core::journal::missions::MissionLog;
 use agent_core::{CommanderCard, CommanderStateBuilder};
-use agent_sync::TOKEN_HINT;
+use agent_sync::token_hint;
 
-use crate::say;
 use crate::sink::{self, Status};
+use crate::{say, say_tr};
 
 const ALIVE_INTERVAL: Duration = Duration::from_secs(300);
 
 pub(super) fn status_summary(builder: &CommanderStateBuilder, missions: &MissionLog) -> String {
     let Some(state) = builder.build() else {
-        return "жду данных из журнала".to_owned();
+        return agent_core::tr!("waiting for journal data", "жду данных из журнала");
     };
 
     let where_is = match &state.current_station {
         Some(station) => format!("{} · {station}", state.current_system.name),
-        None => format!("{} · в космосе", state.current_system.name),
+        None => agent_core::tr!("{} · in space", "{} · в космосе", state.current_system.name),
     };
 
     let active = missions.active().len();
 
-    format!(
+    agent_core::tr!(
+        "{where_is} | {} | missions: {active} | Empire {}%, Federation {}%",
         "{where_is} | {} | заданий: {active} | Империя {}%, Федерация {}%",
-        state.ship, state.imperial_progress, state.federal_progress
+        state.ship,
+        state.imperial_progress,
+        state.federal_progress
     )
 }
 
 pub(super) fn token_rejected(error: &str) -> String {
-    format!(
+    let hint = token_hint();
+    agent_core::tr!(
+        "The server did not accept the agent key: {error}\n\
+         {hint}\n\
+         Nothing was sent. The collected observations are saved and will go out once \
+         the key is fixed.\n\
+         The agent is stopped.",
         "Сервер не принял ключ агента: {error}\n\
-         {TOKEN_HINT}\n\
+         {hint}\n\
          Ничего не отправлено. Накопленные наблюдения сохранены и уйдут, когда \
          ключ будет исправлен.\n\
          Агент остановлен."
@@ -56,7 +65,7 @@ pub(super) fn report_status(
         *last_line = Some(status_line);
         *last_at = Instant::now();
     } else if last_at.elapsed() >= ALIVE_INTERVAL {
-        say!("работаю, изменений нет");
+        say_tr!("working, no changes", "работаю, изменений нет");
         *last_at = Instant::now();
     }
 }

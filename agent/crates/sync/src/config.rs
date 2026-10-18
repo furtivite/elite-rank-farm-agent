@@ -10,6 +10,8 @@ pub const ENV_BASE_URL: &str = "ELITE_AGENT_BASE_URL";
 pub const DEFAULT_BASE_URL: &str = "https://frtvt.com/elite";
 pub const ENV_DEVICE_TOKEN: &str = "ELITE_AGENT_DEVICE_TOKEN";
 
+pub const RELEASES_URL: &str = "https://github.com/furtivite/elite-rank-farm-agent/releases/latest";
+
 pub const STATE_PATH: &str = "/api/elite/state";
 
 pub const REBUILD_PATH: &str = "/api/bootstrap/rebuild";
@@ -28,19 +30,25 @@ pub enum ConfigError {
 impl fmt::Display for ConfigError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NotFound { looked_at } => write!(
-                f,
+            Self::NotFound { looked_at } => f.write_str(&agent_core::tr!(
+                "settings not found: enter the agent key in the window \
+                 (it will be saved to {}), set {ENV_BASE_URL} and {ENV_DEVICE_TOKEN} \
+                 or put {CONFIG_FILE_NAME} there yourself",
                 "конфигурация не найдена: укажите адрес сервера и ключ агента в окне \
                  (они сохранятся в {}), задайте {ENV_BASE_URL} и {ENV_DEVICE_TOKEN} \
                  либо положите туда {CONFIG_FILE_NAME} сами",
                 looked_at.display()
-            ),
-            Self::Unreadable { path, reason } => {
-                write!(f, "{}: не удалось прочитать: {reason}", path.display())
-            }
-            Self::Malformed { path, reason } => {
-                write!(f, "{}: не разбирается как JSON: {reason}", path.display())
-            }
+            )),
+            Self::Unreadable { path, reason } => f.write_str(&agent_core::tr!(
+                "{}: could not read: {reason}",
+                "{}: не удалось прочитать: {reason}",
+                path.display()
+            )),
+            Self::Malformed { path, reason } => f.write_str(&agent_core::tr!(
+                "{}: not readable as JSON: {reason}",
+                "{}: не разбирается как JSON: {reason}",
+                path.display()
+            )),
             Self::Invalid(reason) => write!(f, "{reason}"),
         }
     }
@@ -79,10 +87,15 @@ impl SyncConfig {
         let device_token = device_token.into().trim().to_owned();
 
         if device_token.is_empty() {
-            return Err(ConfigError::Invalid("device token пуст".to_owned()));
+            return Err(ConfigError::Invalid(agent_core::tr!(
+                "device token is empty",
+                "device token пуст"
+            )));
         }
         if !is_allowed_base_url(&base_url) {
-            return Err(ConfigError::Invalid(format!(
+            return Err(ConfigError::Invalid(agent_core::tr!(
+                "{base_url}: https:// is required (http is allowed only for localhost \
+                 in local checks — the server answers 400 to non-HTTPS)",
                 "{base_url}: требуется https:// (http допустим только для localhost \
                  при локальной проверке — сервер отвечает 400 на не-HTTPS)"
             )));

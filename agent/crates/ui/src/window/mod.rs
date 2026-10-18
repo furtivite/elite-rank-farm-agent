@@ -10,16 +10,17 @@ use layout::fit_window;
 use paint::{bind_theme, hwnd_of, Theme};
 use palette::{current_palette, system_prefers_dark};
 use status::{
-    announce_change, show_agent_token_state, show_mode_labels, show_panel_labels, show_token_state,
-    StatusState,
+    announce_change, show_agent_token_state, show_language, show_token_state, StatusState,
 };
 
+use crate::text::texts;
 use crate::AppHooks;
 
 mod brushes;
 mod controls;
 mod dpi;
 mod events;
+mod language;
 mod layout;
 mod measure;
 mod paint;
@@ -27,7 +28,10 @@ mod palette;
 mod status;
 
 pub fn run(hooks: AppHooks) -> Result<(), String> {
-    nwg::init().map_err(|error| format!("не удалось инициализировать интерфейс: {error}"))?;
+    let language = (hooks.load_language)();
+    let t = texts(language);
+
+    nwg::init().map_err(|error| format!("{}: {error}", t.ui_init_failed))?;
 
     read_from_system();
 
@@ -36,14 +40,14 @@ pub fn run(hooks: AppHooks) -> Result<(), String> {
         .family("Segoe UI")
         .size_absolute(scaled(UI_FONT_HEIGHT as i32) as u32)
         .build(&mut ui_font)
-        .map_err(|error| format!("не удалось выбрать шрифт: {error}"))?;
+        .map_err(|error| format!("{}: {error}", t.font_failed))?;
     nwg::Font::set_global_default(Some(ui_font));
 
     let dark = system_prefers_dark();
     let palette = current_palette();
     let palette_cell = Rc::new(std::cell::Cell::new(palette));
 
-    let (ui, notice) = build(dark, palette, &palette_cell)?;
+    let (ui, notice) = build(dark, palette, &palette_cell, language)?;
     let ui = Rc::new(ui);
 
     let active: Rc<std::cell::Cell<Option<bool>>> = Rc::new(std::cell::Cell::new(None));
@@ -68,9 +72,7 @@ pub fn run(hooks: AppHooks) -> Result<(), String> {
     show_agent_token_state(&ui, sync.token_saved);
     show_token_state(&ui, !stored_token.borrow().is_empty());
     ui.panels.settings_open.set(!sync.token_saved);
-    show_panel_labels(&ui);
-    show_mode_labels(&ui, None);
-    ui.status.set_text(&state.borrow().line());
+    show_language(&ui, None, &state.borrow());
     announce_change(ui.status.handle);
     ui.card
         .set_text(&crate::card::card_text(&crate::CommanderLines::default()));

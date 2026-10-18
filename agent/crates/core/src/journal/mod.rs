@@ -11,7 +11,9 @@ pub mod reader;
 pub mod session;
 pub mod status;
 
-pub use cargo::{read_cargo_tons, CARGO_FILE};
+pub use cargo::{
+    collected_by_hand, commodity_key, read_cargo_tons, read_free_cargo, FreeCargo, CARGO_FILE,
+};
 pub use event::{
     FactionPresence, FactionRef, JournalEvent, LandingPads, StateEntry, StationEconomy,
     TrendingState,

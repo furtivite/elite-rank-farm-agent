@@ -77,7 +77,10 @@ fn encrypt(plain: &[u8]) -> Result<Vec<u8>, String> {
     };
 
     if ok == 0 {
-        return Err("не удалось зашифровать ключ средствами Windows".to_owned());
+        return Err(agent_core::tr!(
+            "could not encrypt the key with Windows",
+            "не удалось зашифровать ключ средствами Windows"
+        ));
     }
 
     Ok(take_blob(output))
@@ -109,7 +112,10 @@ fn decrypt(blob: &[u8]) -> Result<Vec<u8>, String> {
     };
 
     if ok == 0 {
-        return Err("не удалось расшифровать сохранённый ключ".to_owned());
+        return Err(agent_core::tr!(
+            "could not decrypt the saved key",
+            "не удалось расшифровать сохранённый ключ"
+        ));
     }
 
     Ok(take_blob(output))

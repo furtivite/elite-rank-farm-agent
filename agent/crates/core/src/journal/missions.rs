@@ -5,6 +5,7 @@ use chrono::{DateTime, Utc};
 use crate::contract::{
     ActiveMissionsPayload, MissionCargo, MissionEntry, AGENT_VERSION, MISSIONS_SCHEMA_VERSION,
 };
+use crate::journal::cargo::{collected_by_hand, FreeCargo};
 use crate::journal::event::{JournalEvent, MissionAcceptedFields};
 use crate::journal::parse::ParsedLine;
 
@@ -51,11 +52,16 @@ pub struct MissionLog {
     missions: BTreeMap<u64, ActiveMission>,
     docked_at: Option<(String, String)>,
     observed_at: Option<DateTime<Utc>>,
+    free_cargo: Option<FreeCargo>,
 }
 
 impl MissionLog {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn set_free_cargo(&mut self, free_cargo: Option<FreeCargo>) {
+        self.free_cargo = free_cargo;
     }
 
     pub fn apply_line(&mut self, line: &ParsedLine) {
@@ -264,6 +270,12 @@ impl MissionLog {
                         delivered: cargo.delivered,
                         collected: cargo.collected,
                         source_market_id: cargo.source_market_id.map(|id| id.to_string()),
+                        in_hold: collected_by_hand(
+                            &mission.name,
+                            cargo.commodity.as_deref(),
+                            cargo.total,
+                            self.free_cargo.as_ref(),
+                        ),
                         lost: (cargo.lost > 0).then_some(cargo.lost),
                     }),
                     details_known: mission.details_known,

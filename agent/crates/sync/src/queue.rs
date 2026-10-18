@@ -14,13 +14,11 @@ impl std::fmt::Display for QueueError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Io { path, reason } => write!(f, "{}: {reason}", path.display()),
-            Self::Malformed { path, reason } => {
-                write!(
-                    f,
-                    "{}: не разбирается как Commander State: {reason}",
-                    path.display()
-                )
-            }
+            Self::Malformed { path, reason } => f.write_str(&agent_core::tr!(
+                "{}: not readable as Commander State: {reason}",
+                "{}: не разбирается как Commander State: {reason}",
+                path.display()
+            )),
         }
     }
 }

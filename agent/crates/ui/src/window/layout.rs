@@ -1,7 +1,6 @@
 use super::controls::Ui;
 use super::dpi::{logical, move_control, scaled};
 use super::measure::{line_width, wrapped_height};
-use super::status::TOGGLING_LABELS;
 
 const MARGIN: i32 = 12;
 const ROW: i32 = 28;
@@ -18,7 +17,7 @@ fn natural_width(ui: &Ui) -> i32 {
     let widest = current
         .iter()
         .map(String::as_str)
-        .chain(TOGGLING_LABELS)
+        .chain(ui.texts().toggling_labels())
         .map(|label| line_width(font_of, label))
         .max()
         .unwrap_or(0);
@@ -65,6 +64,9 @@ fn apply_visibility(ui: &Ui) {
     let read_stored = panels.read_token_stored.get();
 
     for (control, visible) in [
+        (ui.language_label.handle, settings),
+        (ui.english_radio.handle, settings),
+        (ui.russian_radio.handle, settings),
         (ui.server_label.handle, settings),
         (ui.server_input.handle, settings),
         (ui.agent_token_label.handle, settings),
@@ -153,6 +155,10 @@ fn arrange(ui: &Ui, inner: i32, window_height: Option<i32>) -> i32 {
     );
 
     if panels.settings_open.get() {
+        column.text(&ui.language_label, 2);
+        column.put(ui.english_radio.handle, ROW, 0);
+        column.put(ui.russian_radio.handle, ROW, GAP);
+
         column.text(&ui.server_label, 2);
         column.put(ui.server_input.handle, ROW, GAP);
 

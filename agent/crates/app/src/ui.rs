@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use agent_core::Lang;
 use agent_sync::{SyncConfig, DEFAULT_BASE_URL};
-use agent_ui::{AppHooks, Report};
+use agent_ui::{AppHooks, Language, Report};
 
 use crate::dir::resolve_journal_dir;
-use crate::{log, probe, read_token, say, sink, watch};
+use crate::{language, log, probe, read_token, say_tr, sink, watch};
 
 #[cfg(windows)]
 pub fn alert(text: &str) {
@@ -15,7 +16,10 @@ pub fn alert(text: &str) {
     }
 
     let text = wide(text);
-    let caption = wide("Elite Rank Farm Navigator — агент");
+    let caption = wide(&agent_core::tr!(
+        "Elite Rank Farm Navigator — agent",
+        "Elite Rank Farm Navigator — агент"
+    ));
     unsafe {
         MessageBoxW(
             std::ptr::null_mut(),
@@ -33,7 +37,10 @@ pub fn alert(text: &str) {
 
 pub fn install_panic_alert() {
     std::panic::set_hook(Box::new(|info| {
-        let text = format!("Агент аварийно завершился.\n\n{info}");
+        let text = agent_core::tr!(
+            "The agent crashed.\n\n{info}",
+            "Агент аварийно завершился.\n\n{info}"
+        );
         log::append(&text);
         alert(&text);
     }));
@@ -41,6 +48,8 @@ pub fn install_panic_alert() {
 
 pub fn run() -> Result<(), String> {
     agent_ui::run(AppHooks {
+        load_language: Box::new(|| to_window(agent_core::lang())),
+        save_language: Box::new(save_language),
         load_sync: Box::new(load_sync),
         save_sync: Box::new(save_sync),
         load_read_token: Box::new(read_token::load),
@@ -52,7 +61,7 @@ pub fn run() -> Result<(), String> {
         probe: Arc::new(|out| {
             with_reports(out, || {
                 let dir = resolve_journal_dir(None)?;
-                say!("Каталог журналов: {}", dir.display());
+                say_tr!("Journal folder: {}", "Каталог журналов: {}", dir.display());
                 let state = probe::collect(&dir, true)?;
                 probe::report(&state);
                 Ok(())
@@ -61,18 +70,35 @@ pub fn run() -> Result<(), String> {
         watch: Arc::new(|out, running| {
             with_reports(out, || {
                 let dir = resolve_journal_dir(None)?;
-                say!("Каталог журналов: {}", dir.display());
+                say_tr!("Journal folder: {}", "Каталог журналов: {}", dir.display());
                 watch::run_until(&dir, running)
             });
         }),
         resync: Arc::new(|out, running| {
             with_reports(out, || {
                 let dir = resolve_journal_dir(None)?;
-                say!("Каталог журналов: {}", dir.display());
+                say_tr!("Journal folder: {}", "Каталог журналов: {}", dir.display());
                 watch::resync_until(&dir, running)
             });
         }),
     })
+}
+
+fn to_window(lang: Lang) -> Language {
+    match lang {
+        Lang::En => Language::English,
+        Lang::Ru => Language::Russian,
+    }
+}
+
+fn save_language(language: Language) -> Result<(), String> {
+    let lang = match language {
+        Language::English => Lang::En,
+        Language::Russian => Lang::Ru,
+    };
+    language::save(&language::settings_path(), lang)?;
+    agent_core::set_lang(lang);
+    Ok(())
 }
 
 fn with_reports(out: agent_ui::Sink, work: impl FnOnce() -> Result<(), String>) {
@@ -96,7 +122,7 @@ fn with_reports(out: agent_ui::Sink, work: impl FnOnce() -> Result<(), String>) 
     }));
 
     if let Err(reason) = work() {
-        say!("Ошибка: {reason}");
+        say_tr!("Error: {reason}", "Ошибка: {reason}");
     }
 }
 
@@ -115,7 +141,12 @@ fn save_sync(token: &str) -> Result<(), String> {
     let token = if token.is_empty() {
         SyncConfig::load()
             .map(|config| config.device_token().to_owned())
-            .map_err(|_| "ключ агента ещё не сохранён — вставьте его".to_owned())?
+            .map_err(|_| {
+                agent_core::tr!(
+                    "the agent key is not saved yet — paste it",
+                    "ключ агента ещё не сохранён — вставьте его"
+                )
+            })?
     } else {
         token.to_owned()
     };
@@ -133,7 +164,8 @@ fn open_dashboard() -> Result<(), String> {
 fn open_logs() -> Result<(), String> {
     let path = log::path();
     if !path.exists() {
-        return Err(format!(
+        return Err(agent_core::tr!(
+            "there is no log yet: it will appear in the agent folder ({})",
             "лог ещё не заведён: он появится в папке агента ({})",
             path.display()
         ));
@@ -144,9 +176,13 @@ fn open_logs() -> Result<(), String> {
 
 fn open_logs_dir() -> Result<(), String> {
     let path = log::path();
-    let dir = path
-        .parent()
-        .ok_or_else(|| format!("не удалось определить папку лога: {}", path.display()))?;
+    let dir = path.parent().ok_or_else(|| {
+        agent_core::tr!(
+            "could not find the log folder: {}",
+            "не удалось определить папку лога: {}",
+            path.display()
+        )
+    })?;
 
     open_directory(dir)
 }

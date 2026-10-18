@@ -27,16 +27,16 @@ Nothing to install: it is a single file. Put it anywhere and double-click it.
 
 ## Getting started
 
-The agent window is in Russian for now; the button names are given below.
-
 1. Sign in on the [site](https://frtvt.com/elite) and, in your account,
-   in the agent section, press “Issue key” («Выпустить ключ»). The key is
-   shown once — copy it.
+   in the agent section, press “Issue key”. The key is shown once — copy
+   it.
 2. Run `elite-agent.exe`. On the first start the settings are already open:
-   paste the key into “Agent key” («Ключ агента») and press “Save”
-   («Сохранить»).
-3. Press **“Session: on”** («Сессия: включить») and play. The agent works
-   while its window is open.
+   paste the key into “Agent key” and press “Save”.
+3. Press **“Session: on”** and play. The agent works while its window is
+   open.
+
+The window is in English. To switch it to Russian, open “⚙ Settings” and
+choose “Русский” under “Language · Язык”; the choice is remembered.
 
 ## What the agent reads and where it sends it
 
@@ -47,12 +47,15 @@ Only what the site needs, and only from the game journal folder
   progress, accepted missions, station and faction details;
 - from **`Status.json`** — only fuel and cargo in tons: they change the jump
   range. Balance, legal status and the rest are not read;
-- from **`Cargo.json`** — only the total tonnage, not what the cargo is.
+- from **`Cargo.json`** — the total tonnage, and what is in the hold only to
+  match it with your Collect and Mining missions. The site gets one number
+  per such mission — how much of its commodity you carry — and never the
+  list of your cargo.
 
 It sends this **only to the project site**, over HTTPS and with your key.
 The agent reads nothing else on the computer and writes nowhere else.
 
-Its own files — settings, keys, the log and the queue of unsent data — live
+Its own files — settings, language, keys, the log and the queue of unsent data — live
 in `%APPDATA%\elite-agent`. To remove the agent, delete the `.exe` and that
 folder.
 

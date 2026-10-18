@@ -2,7 +2,8 @@ use std::time::Duration;
 
 use agent_core::CommanderState;
 
-use crate::client::{SendAccepted, SendError, StateClient, MIN_SEND_INTERVAL};
+use crate::client::{SendAccepted, StateClient, MIN_SEND_INTERVAL};
+use crate::send_error::SendError;
 
 const MAX_BACKOFF: Duration = Duration::from_secs(60);
 

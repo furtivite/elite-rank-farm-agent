@@ -41,7 +41,13 @@ pub type LoadSync = Box<dyn Fn() -> SyncSettings + Send + Sync>;
 
 pub type SaveSync = Box<dyn Fn(&str) -> Result<(), String> + Send + Sync>;
 
+pub type LoadLanguage = Box<dyn Fn() -> Language + Send + Sync>;
+
+pub type SaveLanguage = Box<dyn Fn(Language) -> Result<(), String> + Send + Sync>;
+
 pub struct AppHooks {
+    pub load_language: LoadLanguage,
+    pub save_language: SaveLanguage,
     pub load_sync: LoadSync,
     pub save_sync: SaveSync,
     pub load_read_token: LoadToken,
@@ -55,9 +61,10 @@ pub struct AppHooks {
     pub resync: RunUntilStopped,
 }
 
-pub fn window_title() -> String {
+pub fn window_title(language: Language) -> String {
     format!(
-        "Elite Rank Farm Navigator — агент {}",
+        "Elite Rank Farm Navigator — {} {}",
+        text::texts(language).agent,
         env!("CARGO_PKG_VERSION")
     )
 }
@@ -67,6 +74,11 @@ mod card;
 
 #[cfg_attr(not(windows), allow(dead_code))]
 mod theme;
+
+#[cfg_attr(not(windows), allow(dead_code))]
+mod text;
+
+pub use text::Language;
 
 #[cfg_attr(not(windows), allow(dead_code))]
 mod icon;
@@ -86,14 +98,17 @@ pub fn run(_hooks: AppHooks) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::window_title;
+    use super::{window_title, Language};
 
     #[test]
     fn заголовок_окна_называет_версию_сборки() {
-        let title = window_title();
+        for language in [Language::English, Language::Russian] {
+            let title = window_title(language);
 
-        assert!(title.starts_with("Elite Rank Farm Navigator"), "{title}");
-        assert!(title.ends_with(env!("CARGO_PKG_VERSION")), "{title}");
+            assert!(title.starts_with("Elite Rank Farm Navigator"), "{title}");
+            assert!(title.ends_with(env!("CARGO_PKG_VERSION")), "{title}");
+        }
+        assert!(window_title(Language::English).contains("agent"));
         assert!(!env!("CARGO_PKG_VERSION").is_empty());
     }
 }

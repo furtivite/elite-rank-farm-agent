@@ -176,7 +176,7 @@ fn bad_token_is_not_retried() {
     assert!(!error.is_retryable(), "{error:?}");
     assert!(error.to_string().contains("revoked"), "{error}");
     let hint = error.hint().expect("401 без подсказки");
-    assert!(hint.contains("Перевыпустить"), "{hint}");
+    assert!(hint.contains("Reissue"), "{hint}");
     assert!(error.is_token_rejected(), "{error:?}");
 }
 

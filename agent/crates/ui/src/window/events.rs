@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use native_windows_gui as nwg;
 
 use super::controls::Ui;
+use super::language;
 use super::layout::{fit_height, fit_window, layout};
 use super::paint::repaint_modes;
 use super::status::{
@@ -57,17 +58,17 @@ pub(super) fn bind(
                             ui.agent_token_input.set_text("");
                             show_agent_token_state(&ui, true);
                             fit_height(&ui);
-                            append(&ui, "Настройки сохранены в профиле пользователя.");
+                            append(&ui, ui.texts().settings_saved);
                         }
                         Err(reason) => {
-                            append(&ui, &format!("Настройки не сохранены: {reason}"));
+                            append(&ui, &format!("{}: {reason}", ui.texts().settings_not_saved));
                         }
                     }
                 }
                 E::OnButtonClick if handle == ui.save_button.handle => {
                     let token = ui.token_input.text();
                     if token.trim().is_empty() {
-                        append(&ui, "Ключ пуст: вставьте его в поле и нажмите «Сохранить».");
+                        append(&ui, ui.texts().key_empty);
                         return;
                     }
 
@@ -77,21 +78,20 @@ pub(super) fn bind(
                             ui.token_input.set_text("");
                             show_token_state(&ui, true);
                             fit_height(&ui);
-                            append(
-                                &ui,
-                                "Ключ сохранён: он зашифрован средствами Windows и привязан к вашей учётной записи.",
-                            );
+                            append(&ui, ui.texts().key_saved);
                         }
-                        Err(reason) => append(&ui, &format!("Ключ не сохранён: {reason}")),
+                        Err(reason) => {
+                            append(&ui, &format!("{}: {reason}", ui.texts().key_not_saved))
+                        }
                     }
                 }
                 E::OnButtonClick if handle == ui.copy_button.handle => {
                     let token = stored_token.borrow().clone();
                     if token.is_empty() {
-                        append(&ui, "Копировать нечего: ключ ещё не сохранён.");
+                        append(&ui, ui.texts().nothing_to_copy);
                     } else {
                         nwg::Clipboard::set_data_text(&ui.window.handle, &token);
-                        append(&ui, "Ключ скопирован в буфер обмена.");
+                        append(&ui, ui.texts().key_copied);
                     }
                 }
                 E::OnButtonClick if handle == ui.reset_button.handle => {
@@ -101,24 +101,29 @@ pub(super) fn bind(
                             ui.token_input.set_text("");
                             show_token_state(&ui, false);
                             fit_height(&ui);
-                            append(&ui, "Ключ забыт. Вставьте новый, когда понадобится.");
+                            append(&ui, ui.texts().key_forgotten);
                         }
-                        Err(reason) => append(&ui, &format!("Ключ не сброшен: {reason}")),
+                        Err(reason) => {
+                            append(&ui, &format!("{}: {reason}", ui.texts().key_not_reset))
+                        }
                     }
                 }
                 E::OnButtonClick if handle == ui.dashboard_button.handle => {
                     if let Err(reason) = (hooks.open_dashboard)() {
-                        append(&ui, &format!("Не удалось открыть сайт: {reason}"));
+                        append(&ui, &format!("{}: {reason}", ui.texts().site_not_opened));
                     }
                 }
                 E::OnButtonClick if handle == ui.logs_button.handle => {
                     if let Err(reason) = (hooks.open_logs)() {
-                        append(&ui, &format!("Не удалось открыть лог: {reason}"));
+                        append(&ui, &format!("{}: {reason}", ui.texts().log_not_opened));
                     }
                 }
                 E::OnButtonClick if handle == ui.logs_dir_button.handle => {
                     if let Err(reason) = (hooks.open_logs_dir)() {
-                        append(&ui, &format!("Не удалось открыть папку с логами: {reason}"));
+                        append(
+                            &ui,
+                            &format!("{}: {reason}", ui.texts().logs_folder_not_opened),
+                        );
                     }
                 }
                 E::OnButtonClick if handle == ui.output_button.handle => {
@@ -132,6 +137,11 @@ pub(super) fn bind(
                     open.set(!open.get());
                     show_panel_labels(&ui);
                     fit_window(&ui);
+                }
+                E::OnButtonClick
+                    if handle == ui.english_radio.handle || handle == ui.russian_radio.handle =>
+                {
+                    language::choose(&ui, &hooks, handle, active.get(), &state.borrow());
                 }
                 E::OnButtonClick if handle == ui.edit_agent_token_button.handle => {
                     show_agent_token_state(&ui, false);
@@ -147,10 +157,7 @@ pub(super) fn bind(
                     let is_resync = handle == ui.resync_button.handle;
 
                     if is_resync && running.load(Ordering::SeqCst) {
-                        append(
-                            &ui,
-                            "Сначала остановите работающий режим — потом «Отправить всё заново».",
-                        );
+                        append(&ui, ui.texts().stop_before_resync);
                         return;
                     }
 
@@ -159,12 +166,12 @@ pub(super) fn bind(
                         active.set(None);
                         repaint_modes(&ui);
                         show_mode_labels(&ui, active.get());
-                        append(&ui, "Остановлено.");
+                        append(&ui, ui.texts().stopped);
                         return;
                     }
 
                     if running.load(Ordering::SeqCst) {
-                        append(&ui, "Один режим уже работает — сначала остановите его.");
+                        append(&ui, ui.texts().mode_already_running);
                         return;
                     }
 
@@ -179,6 +186,7 @@ pub(super) fn bind(
                     let running_flag = Arc::clone(&running);
                     let hooks = Arc::clone(&hooks);
                     let sender = notice_sender;
+                    let finished = ui.texts().mode_finished;
 
                     *worker.borrow_mut() = Some(std::thread::spawn(move || {
                         let sink: crate::Sink = Arc::new(move |report: Report| {
@@ -197,7 +205,7 @@ pub(super) fn bind(
                         }
 
                         running_flag.store(false, Ordering::SeqCst);
-                        sink(Report::Line("--- режим завершён".to_owned()));
+                        sink(Report::Line(finished.to_owned()));
                     }));
                 }
                 E::OnNotice => {
@@ -232,7 +240,7 @@ pub(super) fn bind(
                     }
 
                     if status_changed {
-                        ui.status.set_text(&state.borrow().line());
+                        ui.status.set_text(&state.borrow().line(ui.texts()));
                         announce_change(ui.status.handle);
                     }
                     if status_changed || card_changed {

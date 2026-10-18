@@ -202,6 +202,18 @@ pub(super) fn make_owner_drawn(handle: nwg::ControlHandle) {
     }
 }
 
+pub(super) fn classic_look(handle: nwg::ControlHandle) {
+    use windows_sys::Win32::UI::Controls::SetWindowTheme;
+
+    let Some(hwnd) = handle.hwnd() else {
+        return;
+    };
+    let empty: [u16; 1] = [0];
+    unsafe {
+        SetWindowTheme(hwnd as _, empty.as_ptr(), empty.as_ptr());
+    }
+}
+
 pub(super) fn hwnd_of(handle: nwg::ControlHandle) -> usize {
     handle.hwnd().map_or(0, |hwnd| hwnd as usize)
 }

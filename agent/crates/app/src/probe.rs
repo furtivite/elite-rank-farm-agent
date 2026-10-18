@@ -3,8 +3,8 @@ use std::path::Path;
 use agent_core::journal::{journal_files, read_cargo_tons, read_status, JournalTailer, ParsedLine};
 use agent_core::{CommanderState, CommanderStateBuilder};
 
-use crate::say;
 use crate::sink::{self, Status};
+use crate::{say, say_tr};
 
 pub fn collect(dir: &Path, verbose: bool) -> Result<CommanderState, String> {
     let files = journal_files(dir).map_err(|error| {
@@ -13,7 +13,11 @@ pub fn collect(dir: &Path, verbose: bool) -> Result<CommanderState, String> {
     })?;
     if files.is_empty() {
         sink::status(Status::Game(false));
-        return Err(format!("{}: нет файлов Journal*.log", dir.display()));
+        return Err(agent_core::tr!(
+            "{}: no Journal*.log files",
+            "{}: нет файлов Journal*.log",
+            dir.display()
+        ));
     }
     sink::status(Status::Game(true));
 
@@ -27,7 +31,11 @@ pub fn collect(dir: &Path, verbose: bool) -> Result<CommanderState, String> {
         let lines = match tailer.read_new() {
             Ok(lines) => lines,
             Err(error) => {
-                say!("{}: ошибка чтения: {error}", path.display());
+                say_tr!(
+                    "{}: read error: {error}",
+                    "{}: ошибка чтения: {error}",
+                    path.display()
+                );
                 continue;
             }
         };
@@ -46,10 +54,21 @@ pub fn collect(dir: &Path, verbose: bool) -> Result<CommanderState, String> {
     }
 
     if verbose {
-        say!("Найдено журналов: {}\n", files.len());
-        say!("Событий применено: {applied}");
-        say!("Строк пропущено (события вне MVP): {ignored}");
-        say!("Строк не разобрано: {}", unparsed.len());
+        say_tr!(
+            "Journals found: {}\n",
+            "Найдено журналов: {}\n",
+            files.len()
+        );
+        say_tr!("Events applied: {applied}", "Событий применено: {applied}");
+        say_tr!(
+            "Lines skipped (events outside MVP): {ignored}",
+            "Строк пропущено (события вне MVP): {ignored}"
+        );
+        say_tr!(
+            "Lines not parsed: {}",
+            "Строк не разобрано: {}",
+            unparsed.len()
+        );
         for reason in &unparsed {
             say!("  - {reason}");
         }
@@ -70,30 +89,43 @@ pub fn collect(dir: &Path, verbose: bool) -> Result<CommanderState, String> {
     if !missing.is_empty() {
         let listed: Vec<String> = missing
             .iter()
-            .map(|field| format!("{field:?} (событие {})", field.filled_by()))
+            .map(|field| {
+                agent_core::tr!(
+                    "{field:?} (event {})",
+                    "{field:?} (событие {})",
+                    field.filled_by()
+                )
+            })
             .collect();
-        return Err(format!(
+        return Err(agent_core::tr!(
+            "the state is incomplete, missing: {}",
             "состояние неполное, не хватает: {}",
             listed.join(", ")
         ));
     }
 
-    builder
-        .build()
-        .ok_or_else(|| "состояние не собралось при пустом списке недостающих полей".to_owned())
+    builder.build().ok_or_else(|| {
+        agent_core::tr!(
+            "the state did not build although no fields are missing",
+            "состояние не собралось при пустом списке недостающих полей"
+        )
+    })
 }
 
 pub fn report(state: &CommanderState) {
     match serde_json::to_string_pretty(state) {
         Ok(json) => say!("Commander State (payload PUT /api/elite/state):\n{json}"),
-        Err(error) => say!("не удалось сериализовать состояние: {error}"),
+        Err(error) => say_tr!(
+            "could not serialize the state: {error}",
+            "не удалось сериализовать состояние: {error}"
+        ),
     }
 
     let violations = state.validate();
     if violations.is_empty() {
-        say!("\nКонтракт: нарушений нет.");
+        say_tr!("\nContract: no violations.", "\nКонтракт: нарушений нет.");
     } else {
-        say!("\nКонтракт нарушен:");
+        say_tr!("\nContract violated:", "\nКонтракт нарушен:");
         for violation in &violations {
             say!("  - {violation}");
         }

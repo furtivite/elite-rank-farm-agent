@@ -51,3 +51,8 @@ macro_rules! say {
     () => { $crate::sink::emit(String::new()) };
     ($($arg:tt)*) => { $crate::sink::emit(format!($($arg)*)) };
 }
+
+#[macro_export]
+macro_rules! say_tr {
+    ($($arg:tt)*) => { $crate::sink::emit(agent_core::tr!($($arg)*)) };
+}
